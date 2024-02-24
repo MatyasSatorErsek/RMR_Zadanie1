@@ -107,9 +107,9 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
         robot.setTranslationSpeed(0);
 
     getOdometry(robotdata);
-    //std::cout << "X:" << x << std::endl;
-    //std::cout << "Y:" << y << std::endl;
-    std::cout << "Phi:" << phi << std::endl;
+    std::cout << "X:" << x << std::endl;
+    std::cout << "Y:" << y << std::endl;
+    std::cout << "Phi:" << phi * (180 / 3.14159265) << std::endl;
 
 
     if(datacounter%5==0)
@@ -238,15 +238,15 @@ void MainWindow::getOdometry(TKobukiData robotData)
         rightWheel = tickToMeter(encRight,robotData.EncoderRight);
         lrk = (leftWheel + rightWheel)/2;
 
-        //deltaa  = (rightWheel - leftWheel)/0.23;
+        deltaa  = (rightWheel - leftWheel)/0.23;
 
-        deltaa = robotData.GyroAngle * (3.1415926/180) - gyro;
+        //deltaa = robotData.GyroAngle * (3.1415926/180) + gyro;
 
         phi += deltaa;
         distance += lrk;
 
-        x = distance * cos(phi);
-        y  = distance  * sin(phi);
+        x = x + lrk*cos(phi);
+        y  = y + lrk * sin(phi);
 
     }
 
