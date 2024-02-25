@@ -13,7 +13,7 @@
 double tickToMeter(unsigned short encValPrev, unsigned short encValCur)
 {
     double distance;
-    distance = (float) TICK_TO_METER * (encValCur - encValPrev);
+    distance = (double) TICK_TO_METER * (encValCur - encValPrev);
     return distance;
 }
 
@@ -33,6 +33,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     datacounter=0;
+
+    x = 0;
+    y = 0;
+    phi = 0;
+    distance = 0;
 
 
 }
@@ -247,6 +252,9 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
         x = x + lrk*cos(phi);
         y  = y + lrk * sin(phi);
+
+        //x = distance * cos(phi);
+        //y = distance * sin(phi);
 
     }
 
