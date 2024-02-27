@@ -25,6 +25,13 @@ namespace Ui {
 class MainWindow;
 }
 
+typedef struct position
+{
+    double x;
+    double y;
+    double phi;
+}Position;
+
 ///toto je trieda s oknom.. ktora sa spusti ked sa spusti aplikacia.. su tu vsetky gombiky a spustania...
 class MainWindow : public QMainWindow
 {
@@ -75,11 +82,15 @@ private:
      double y;
      double phi;
 
-     double encRight;
-     double encLeft;
-     double gyro;
+     unsigned short encRight;
+     unsigned short encLeft;
+     signed short gyro;
+
+     bool posReached;
 
      void getOdometry(TKobukiData robotdata);
+
+     void forwardSpeedCtr(Position refPos);
 
      double forwardspeed;//mm/s
      double rotationspeed;//omega/s

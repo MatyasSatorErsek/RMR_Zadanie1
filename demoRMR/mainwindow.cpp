@@ -102,19 +102,39 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
     /// ale nic vypoctovo narocne - to iste vlakno ktore cita data z robota
     ///teraz tu posielam rychlosti na zaklade toho co setne joystick a vypisujeme data z robota(kazdy 5ty krat. ale mozete skusit aj castejsie). vyratajte si polohu. a vypiste spravnu
     /// tuto cast mozete vklude vymazat,alebo znasilnit na vas regulator alebo ake mate pohnutky
-    if(forwardspeed==0 && rotationspeed!=0)
+    /*if(forwardspeed==0 && rotationspeed!=0)
         robot.setRotationSpeed(rotationspeed);
     else if(forwardspeed!=0 && rotationspeed==0)
         robot.setTranslationSpeed(forwardspeed);
     else if((forwardspeed!=0 && rotationspeed!=0))
         robot.setArcSpeed(forwardspeed,forwardspeed/rotationspeed);
     else
-        robot.setTranslationSpeed(0);
+        robot.setTranslationSpeed(0);*/
+
+
+
+
+
+
+
+
 
     getOdometry(robotdata);
-    std::cout << "X:" << x << std::endl;
+    /*std::cout << "X:" << x << std::endl;
     std::cout << "Y:" << y << std::endl;
-    std::cout << "Phi:" << phi * (180 / 3.14159265) << std::endl;
+    std::cout << "Phi:" << phi * (180 / 3.14159265) << std::endl;*/
+
+    Position refPos;
+    refPos.x = 1.0;
+    refPos.y = 0;
+    refPos.phi = 0;
+
+    forwardSpeedCtr(refPos);
+
+    robot.setTranslationSpeed(forwardspeed);
+
+
+
 
 
     if(datacounter%5==0)
@@ -261,5 +281,23 @@ void MainWindow::getOdometry(TKobukiData robotData)
     encLeft = robotData.EncoderLeft;
     encRight = robotData.EncoderRight;
     gyro = robotData.GyroAngle;
-}
+  }
 
+
+  void MainWindow::forwardSpeedCtr(Position refPos)
+  {
+      double distErr;
+      double Kp = 100.0;
+      distErr = sqrt(pow(refPos.x - x,2) + pow(refPos.y - y,2));
+
+
+      if(distErr < 0.1){
+          forwardspeed = 0;
+          posReached = true;
+          //std::cout << "Pos reached" << std::endl;
+
+      }
+      else{
+          forwardspeed = Kp * distErr;
+      }
+  }
