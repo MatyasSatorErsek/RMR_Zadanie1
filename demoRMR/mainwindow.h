@@ -17,9 +17,13 @@
 #include<vector>
 //#include "ckobuki.h"
 //#include "rplidar.h"
-
+#include <cmath>
+#include<queue>
+#include<windows.h>
 #include "robot.h"
 #define TICK_TO_METER 0.000085292090497737556558
+#define ANGLE_TOLERANCE PI*0.05
+#define ENCODER_MAX_VALUE 65535
 
 namespace Ui {
 class MainWindow;
@@ -30,6 +34,15 @@ typedef struct position
     double x;
     double y;
     double phi;
+
+    position(double xRef,double yRef, double phiRef)
+    {
+        x = xRef;
+        y = yRef;
+        phi = phiRef;
+
+    }
+
 }Position;
 
 ///toto je trieda s oknom.. ktora sa spusti ked sa spusti aplikacia.. su tu vsetky gombiky a spustania...
@@ -82,15 +95,20 @@ private:
      double y;
      double phi;
 
-     unsigned short encRight;
-     unsigned short encLeft;
+     queue<Position> referencePositions;
+
+     short encRight;
+     short encLeft;
      signed short gyro;
 
      bool posReached;
+     bool orientationReached;
 
      void getOdometry(TKobukiData robotdata);
 
      void forwardSpeedCtr(Position refPos);
+
+     void rotationSpeedCtr(Position refPos);
 
      double forwardspeed;//mm/s
      double rotationspeed;//omega/s

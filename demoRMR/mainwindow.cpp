@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QPainter>
 #include <math.h>
+
 ///TOTO JE DEMO PROGRAM...AK SI HO NASIEL NA PC V LABAKU NEPREPISUJ NIC,ALE SKOPIRUJ SI MA NIEKAM DO INEHO FOLDERA
 /// AK HO MAS Z GITU A ROBIS NA LABAKOVOM PC, TAK SI HO VLOZ DO FOLDERA KTORY JE JASNE ODLISITELNY OD TVOJICH KOLEGOV
 /// NASLEDNE V POLOZKE Projects SKONTROLUJ CI JE VYPNUTY shadow build...
@@ -24,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
     ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
+    //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
   //  cap.open("http://192.168.1.11:8000/stream.mjpg");
     ui->setupUi(this);
     datacounter=0;
@@ -38,6 +40,11 @@ MainWindow::MainWindow(QWidget *parent) :
     y = 0;
     phi = 0;
     distance = 0;
+
+    referencePositions.push(Position(0.25,0.25,0));
+    /*referencePositions.push(Position(-0.05,0.35,0));
+    referencePositions.push(Position(0.0,0.8,0));*/
+
 
 
 }
@@ -124,16 +131,35 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
     std::cout << "Y:" << y << std::endl;
     std::cout << "Phi:" << phi * (180 / 3.14159265) << std::endl;*/
 
-    Position refPos;
-    refPos.x = 1.0;
-    refPos.y = 0;
-    refPos.phi = 0;
-
-    forwardSpeedCtr(refPos);
-
-    robot.setTranslationSpeed(forwardspeed);
-
-
+    if(datacounter < 100)
+    {
+        robot.setTranslationSpeed(50);
+    }
+    else if(!referencePositions.empty())
+    {
+        Position currRefPos = referencePositions.front();
+        if(!orientationReached)
+        {
+            rotationSpeedCtr(currRefPos);
+            robot.setRotationSpeed(rotationspeed);
+        }
+        else
+        {
+            forwardSpeedCtr(currRefPos);
+            robot.setTranslationSpeed(forwardspeed);
+            double alfa = -phi +atan2(currRefPos.y - y, currRefPos.x- x);
+            if(abs(alfa)>ANGLE_TOLERANCE)
+            {
+                orientationReached = false;
+            }
+        }
+        if(orientationReached && posReached)
+        {
+            referencePositions.pop();
+            orientationReached = false;
+            posReached = false;
+        }
+    }
 
 
 
@@ -247,7 +273,7 @@ void MainWindow::getNewFrame()
 void MainWindow::getOdometry(TKobukiData robotData)
 {
     double leftWheel,rightWheel,lrk,deltaa;
-
+    short newEncLeft,newEncRight;
 
 
     if(datacounter == 0)
@@ -259,8 +285,35 @@ void MainWindow::getOdometry(TKobukiData robotData)
     }
     else
     {
-        leftWheel = tickToMeter(encLeft,robotData.EncoderLeft);
-        rightWheel = tickToMeter(encRight,robotData.EncoderRight);
+
+        int offsetRight = 0,offsetLeft = 0;
+        bool encUnderFlowRight = false,encUnderFlowLeft = false;
+
+        newEncLeft = robotData.EncoderLeft;
+        newEncRight = robotData.EncoderRight;
+
+
+        /*if(abs(newEncLeft - encLeft) > ENCODER_MAX_VALUE/5)
+        {
+            newEncLeft = newEncLeft - ENCODER_MAX_VALUE;
+        }
+        else if(newEncLeft < 0)
+        {
+            newEncLeft = newEncLeft - ENCODER_MAX_VALUE;
+        }
+
+        if(abs(newEncRight - encRight) > ENCODER_MAX_VALUE/5)
+        {
+            newEncRight = newEncRight - ENCODER_MAX_VALUE;
+        }
+        else if(newEncRight < 0)
+        {
+            newEncRight = newEncRight - ENCODER_MAX_VALUE;
+        }*/
+
+
+        leftWheel = tickToMeter(encLeft,newEncLeft);
+        rightWheel = tickToMeter(encRight,newEncRight);
         lrk = (leftWheel + rightWheel)/2;
 
         deltaa  = (rightWheel - leftWheel)/0.23;
@@ -278,26 +331,45 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
     }
 
-    encLeft = robotData.EncoderLeft;
-    encRight = robotData.EncoderRight;
+    encLeft = newEncLeft;
+    encRight = newEncRight;
     gyro = robotData.GyroAngle;
   }
 
 
   void MainWindow::forwardSpeedCtr(Position refPos)
   {
-      double distErr;
-      double Kp = 100.0;
+      double distErr,direction;
+      double Kp = 350.0;
       distErr = sqrt(pow(refPos.x - x,2) + pow(refPos.y - y,2));
+      direction = -phi +atan2(refPos.y - y, refPos.x- x);
 
-
-      if(distErr < 0.1){
+      if(distErr < 0.01){
           forwardspeed = 0;
           posReached = true;
           //std::cout << "Pos reached" << std::endl;
 
       }
       else{
-          forwardspeed = Kp * distErr;
+          forwardspeed = Kp * distErr * cos(direction);
       }
+  }
+
+
+  void MainWindow::rotationSpeedCtr(Position refPos)
+  {
+      double rotErr;
+      double Kp = 1.0;
+      rotErr = -phi +atan2(refPos.y - y, refPos.x- x);
+      //rotErr = -phi + PI/4;
+      //std::cout<<rotErr<<std::endl;
+      if(abs(rotErr) < 3.14159265/150){
+          rotationspeed = 0;
+          orientationReached = true;
+      }
+      else
+      {
+          rotationspeed = Kp * rotErr;
+      }
+
   }
