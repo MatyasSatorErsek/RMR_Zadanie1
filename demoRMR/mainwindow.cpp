@@ -11,12 +11,29 @@
 /// AZ POTOM ZACNI ROBIT... AK TO NESPRAVIS, POJDU BODY DOLE... A NIE JEDEN,ALEBO DVA ALE BUDES RAD
 /// AK SA DOSTANES NA SKUSKU
 
-double tickToMeter(unsigned short encValPrev, unsigned short encValCur)
+int evalEnc(int oldDiff)
+{
+    int newDiff= oldDiff;
+    int overflowVal = ENCODER_MAX_VALUE, overflowVal2 = ENCODER_MAX_VALUE/2;
+
+    if(oldDiff > overflowVal2){
+        newDiff = oldDiff - overflowVal;
+    } else if (oldDiff < -overflowVal2) {
+        newDiff = oldDiff + overflowVal;
+    }
+
+    return newDiff;
+}
+
+
+double tickToMeter(int encValPrev, int encValCur)
 {
     double distance;
-    distance = (double) TICK_TO_METER * (encValCur - encValPrev);
+    int difference = encValCur - encValPrev;
+    distance = (double) TICK_TO_METER * evalEnc(difference);
     return distance;
 }
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -41,9 +58,11 @@ MainWindow::MainWindow(QWidget *parent) :
     phi = 0;
     distance = 0;
 
+    posReached = false; orientationReached = false;
+
     referencePositions.push(Position(0.25,0.25,0));
-    /*referencePositions.push(Position(-0.05,0.35,0));
-    referencePositions.push(Position(0.0,0.8,0));*/
+    referencePositions.push(Position(-0.05,0.35,0));
+    referencePositions.push(Position(0.0,0.8,0));
 
 
 
@@ -131,11 +150,7 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
     std::cout << "Y:" << y << std::endl;
     std::cout << "Phi:" << phi * (180 / 3.14159265) << std::endl;*/
 
-    if(datacounter < 100)
-    {
-        robot.setTranslationSpeed(50);
-    }
-    else if(!referencePositions.empty())
+    if(!referencePositions.empty())
     {
         Position currRefPos = referencePositions.front();
         if(!orientationReached)
@@ -145,6 +160,7 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
         }
         else
         {
+
             forwardSpeedCtr(currRefPos);
             robot.setTranslationSpeed(forwardspeed);
             double alfa = -phi +atan2(currRefPos.y - y, currRefPos.x- x);
@@ -275,6 +291,9 @@ void MainWindow::getOdometry(TKobukiData robotData)
     double leftWheel,rightWheel,lrk,deltaa;
     short newEncLeft,newEncRight;
 
+    newEncLeft = (int) robotData.EncoderLeft;
+    newEncRight = (int) robotData.EncoderRight;
+
 
     if(datacounter == 0)
     {
@@ -286,30 +305,6 @@ void MainWindow::getOdometry(TKobukiData robotData)
     else
     {
 
-        int offsetRight = 0,offsetLeft = 0;
-        bool encUnderFlowRight = false,encUnderFlowLeft = false;
-
-        newEncLeft = robotData.EncoderLeft;
-        newEncRight = robotData.EncoderRight;
-
-
-        /*if(abs(newEncLeft - encLeft) > ENCODER_MAX_VALUE/5)
-        {
-            newEncLeft = newEncLeft - ENCODER_MAX_VALUE;
-        }
-        else if(newEncLeft < 0)
-        {
-            newEncLeft = newEncLeft - ENCODER_MAX_VALUE;
-        }
-
-        if(abs(newEncRight - encRight) > ENCODER_MAX_VALUE/5)
-        {
-            newEncRight = newEncRight - ENCODER_MAX_VALUE;
-        }
-        else if(newEncRight < 0)
-        {
-            newEncRight = newEncRight - ENCODER_MAX_VALUE;
-        }*/
 
 
         leftWheel = tickToMeter(encLeft,newEncLeft);

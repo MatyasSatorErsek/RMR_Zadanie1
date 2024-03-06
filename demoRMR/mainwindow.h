@@ -97,8 +97,8 @@ private:
 
      queue<Position> referencePositions;
 
-     short encRight;
-     short encLeft;
+     int encRight;
+     int encLeft;
      signed short gyro;
 
      bool posReached;
