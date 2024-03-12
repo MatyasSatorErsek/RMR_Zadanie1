@@ -2,6 +2,8 @@
 #include "ui_mainwindow.h"
 #include <QPainter>
 #include <math.h>
+#include <chrono>
+using namespace std::chrono;
 
 ///TOTO JE DEMO PROGRAM...AK SI HO NASIEL NA PC V LABAKU NEPREPISUJ NIC,ALE SKOPIRUJ SI MA NIEKAM DO INEHO FOLDERA
 /// AK HO MAS Z GITU A ROBIS NA LABAKOVOM PC, TAK SI HO VLOZ DO FOLDERA KTORY JE JASNE ODLISITELNY OD TVOJICH KOLEGOV
@@ -41,8 +43,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
-    ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
-    //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
+    //ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
+    ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
   //  cap.open("http://192.168.1.11:8000/stream.mjpg");
     ui->setupUi(this);
     datacounter=0;
@@ -60,9 +62,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     posReached = false; orientationReached = false;
 
-    referencePositions.push(Position(0.25,0.25,0));
-    referencePositions.push(Position(-0.05,0.35,0));
-    referencePositions.push(Position(0.0,0.8,0));
+    referencePositions.push(Position(0.5,0.5,0));
+    referencePositions.push(Position(0.1,0.75,0));
+    //referencePositions.push(Position(0.0,0.8,0));
 
 
 
@@ -334,20 +336,66 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
   void MainWindow::forwardSpeedCtr(Position refPos)
   {
-      double distErr,direction;
+      // double distErr,direction;
+      // double Kp = 350.0;
+      // distErr = sqrt(pow(refPos.x - x,2) + pow(refPos.y - y,2));
+      // direction = -phi +atan2(refPos.y - y, refPos.x- x);
+
+      // if(distErr < 0.01){
+      //     forwardspeed = 0;
+      //     posReached = true;
+      //     //std::cout << "Pos reached" << std::endl;
+
+      // }
+      // else{
+      //     forwardspeed = Kp * distErr * cos(direction);
+      // }
+
+      static double prevForwardspeed = 0; // Previous forward speed
+      static auto lastUpdateTime = std::chrono::high_resolution_clock::now(); // Last update time
+      double forwardspeedChange, maxForwardspeedChange;
+      double distErr, direction;
       double Kp = 350.0;
-      distErr = sqrt(pow(refPos.x - x,2) + pow(refPos.y - y,2));
-      direction = -phi +atan2(refPos.y - y, refPos.x- x);
+      double maxAccel = 30.0; // Maximum acceleration rate, adjust as needed
+      double minSpeed = 10.0; // Minimum speed when close to the target
+
+      // Calculate deltaTime based on current time and last update time
+      auto currentTime = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double> timeSpan = currentTime - lastUpdateTime;
+      double deltaTime = timeSpan.count(); // deltaTime in seconds
+
+      distErr = sqrt(pow(refPos.x - x, 2) + pow(refPos.y - y, 2));
+      direction = -phi + atan2(refPos.y - y, refPos.x - x);
+
+      if (deltaTime > 0.1) {
+          deltaTime = 0.1;
+      }
 
       if(distErr < 0.01){
           forwardspeed = 0;
           posReached = true;
-          //std::cout << "Pos reached" << std::endl;
-
       }
       else{
-          forwardspeed = Kp * distErr * cos(direction);
+          double desiredSpeed = Kp * distErr * cos(direction);
+          // Apply a minimum speed threshold if the desired speed is too low but not zero
+          if (desiredSpeed > 0 && desiredSpeed < minSpeed) {
+              desiredSpeed = minSpeed;
+          }
+          forwardspeedChange = desiredSpeed - prevForwardspeed; // Calculate the change needed in speed
+          maxForwardspeedChange = maxAccel * deltaTime; // Calculate the maximum allowed speed change
+
+          // Limit the change in speed to the maximum allowed
+          if (forwardspeedChange > maxForwardspeedChange)
+              forwardspeedChange = maxForwardspeedChange;
+          else if (forwardspeedChange < -maxForwardspeedChange)
+              forwardspeedChange = -maxForwardspeedChange;
+
+          forwardspeed = prevForwardspeed + forwardspeedChange;
       }
+
+      prevForwardspeed = forwardspeed; // Update the previous speed for the next call
+      lastUpdateTime = currentTime;
+
   }
 
 
@@ -358,7 +406,7 @@ void MainWindow::getOdometry(TKobukiData robotData)
       rotErr = -phi +atan2(refPos.y - y, refPos.x- x);
       //rotErr = -phi + PI/4;
       //std::cout<<rotErr<<std::endl;
-      if(abs(rotErr) < 3.14159265/150){
+      if(abs(rotErr) < 3.14159265/120){
           rotationspeed = 0;
           orientationReached = true;
       }
