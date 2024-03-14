@@ -3,6 +3,7 @@
 #include <QPainter>
 #include <math.h>
 
+
 ///TOTO JE DEMO PROGRAM...AK SI HO NASIEL NA PC V LABAKU NEPREPISUJ NIC,ALE SKOPIRUJ SI MA NIEKAM DO INEHO FOLDERA
 /// AK HO MAS Z GITU A ROBIS NA LABAKOVOM PC, TAK SI HO VLOZ DO FOLDERA KTORY JE JASNE ODLISITELNY OD TVOJICH KOLEGOV
 /// NASLEDNE V POLOZKE Projects SKONTROLUJ CI JE VYPNUTY shadow build...
@@ -66,7 +67,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     referencePositions.push(Position(0.3,0.3,0));
     referencePositions.push(Position(0.5,0.2,0));
-    //referencePositions.push(Position(0.3,-0.15,0));
+    referencePositions.push(Position(0.1,-0.15,0));
 
 
 
@@ -333,43 +334,66 @@ void MainWindow::getOdometry(TKobukiData robotData)
   }
 
 
-  void MainWindow::forwardSpeedCtr(Position refPos)
-  {
-      double distErr,direction;
+  void MainWindow::forwardSpeedCtr(Position refPos) {
+      double distErr;
       double Kp = 400.0;
-      distErr = sqrt(pow(refPos.x - x,2) + pow(refPos.y - y,2));
-      direction = -phi +atan2(refPos.y - y, refPos.x- x);
+      double maxForwardSpeed = 450.0; // Set maximum forward speed
+      double rampRate = 10.0; // Set ramp rate
 
-      if(distErr < 0.01){
+      distErr = sqrt(pow(refPos.x - x, 2) + pow(refPos.y - y, 2));
+
+      if (distErr < 0.05) {
+          // If the error is small, stop forward motion
           forwardspeed = 0;
           posReached = true;
-          //std::cout << "Pos reached" << std::endl;
+      } else {
+          // Calculate the desired forward speed with proportional control
+          double desiredForwardSpeed = Kp * distErr;
 
-      }
-      else{
-          //forwardspeed = Kp * distErr * cos(direction);
-          forwardspeed = Kp * distErr;
-          if(forwardspeed > 350.0){
-              forwardspeed = 350.0;
+          // Apply ramping to the desired forward speed
+          if (abs(desiredForwardSpeed - forwardspeed) > rampRate) {
+              if (desiredForwardSpeed > forwardspeed)
+                  forwardspeed += rampRate; // Increase forward speed gradually
+              else
+                  forwardspeed -= rampRate; // Decrease forward speed gradually
+          } else {
+              forwardspeed = desiredForwardSpeed; // Apply the desired forward speed
           }
+
+          // Limit the forward speed to the maximum value
+          forwardspeed = min(forwardspeed, maxForwardSpeed);
       }
   }
 
-
-  void MainWindow::rotationSpeedCtr(Position refPos)
-  {
+  void MainWindow::rotationSpeedCtr(Position refPos) {
       double rotErr;
-      double Kp = 1.1;
-      rotErr = -phi +atan2(refPos.y - y, refPos.x- x);
-      //rotErr = -phi + PI/4;
-      //std::cout<<rotErr<<std::endl;
-      if(abs(rotErr) < 3.14159265/120){
+      double Kp = 1.0;
+      double maxRotationSpeed = 3.0; // Set maximum rotation speed
+      double rampRate = 0.2; // Set ramp rate
+
+      rotErr = -phi + atan2(refPos.y - y, refPos.x - x);
+
+      if (abs(rotErr) < 3.14159265 / 120) {
+          // If the error is small, stop rotation
           rotationspeed = 0;
           orientationReached = true;
-      }
-      else
-      {
-          rotationspeed = Kp * rotErr;
-      }
+      } else {
+          // Calculate the desired rotation speed with proportional control
+          double desiredRotationSpeed = Kp * rotErr;
 
+          // Apply ramping to the desired rotation speed
+          if (abs(desiredRotationSpeed - rotationspeed) > rampRate) {
+              if (desiredRotationSpeed > rotationspeed)
+                  rotationspeed += rampRate; // Increase rotation speed gradually
+              else
+                  rotationspeed -= rampRate; // Decrease rotation speed gradually
+          } else {
+              rotationspeed = desiredRotationSpeed; // Apply the desired rotation speed
+          }
+
+          // Limit the rotation speed to the maximum value
+          rotationspeed = min(rotationspeed, maxRotationSpeed);
+          rotationspeed = max(rotationspeed, -maxRotationSpeed);
+      }
   }
+

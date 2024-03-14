@@ -21,8 +21,12 @@
 #include<queue>
 #include<windows.h>
 #include "robot.h"
+#include <algorithm> // Include this header for std::min and std::max
+
+
+
 #define TICK_TO_METER 0.000085292090497737556558
-#define ANGLE_TOLERANCE PI*0.07
+#define ANGLE_TOLERANCE PI*0.1
 #define ENCODER_MAX_VALUE 65535
 
 namespace Ui {
