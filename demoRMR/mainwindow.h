@@ -22,7 +22,7 @@
 #include<windows.h>
 #include "robot.h"
 #define TICK_TO_METER 0.000085292090497737556558
-#define ANGLE_TOLERANCE PI*0.05
+#define ANGLE_TOLERANCE PI*0.07
 #define ENCODER_MAX_VALUE 65535
 
 namespace Ui {

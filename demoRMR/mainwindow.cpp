@@ -34,6 +34,10 @@ double tickToMeter(int encValPrev, int encValCur)
     return distance;
 }
 
+void createRampValue()
+{
+    double increment = 0.01;
+}
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -60,9 +64,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     posReached = false; orientationReached = false;
 
-    referencePositions.push(Position(0.25,0.25,0));
-    referencePositions.push(Position(-0.05,0.35,0));
-    referencePositions.push(Position(0.0,0.8,0));
+    referencePositions.push(Position(0.3,0.3,0));
+    referencePositions.push(Position(0.5,0.2,0));
+    //referencePositions.push(Position(0.3,-0.15,0));
 
 
 
@@ -304,9 +308,6 @@ void MainWindow::getOdometry(TKobukiData robotData)
     }
     else
     {
-
-
-
         leftWheel = tickToMeter(encLeft,newEncLeft);
         rightWheel = tickToMeter(encRight,newEncRight);
         lrk = (leftWheel + rightWheel)/2;
@@ -335,7 +336,7 @@ void MainWindow::getOdometry(TKobukiData robotData)
   void MainWindow::forwardSpeedCtr(Position refPos)
   {
       double distErr,direction;
-      double Kp = 350.0;
+      double Kp = 400.0;
       distErr = sqrt(pow(refPos.x - x,2) + pow(refPos.y - y,2));
       direction = -phi +atan2(refPos.y - y, refPos.x- x);
 
@@ -346,7 +347,11 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
       }
       else{
-          forwardspeed = Kp * distErr * cos(direction);
+          //forwardspeed = Kp * distErr * cos(direction);
+          forwardspeed = Kp * distErr;
+          if(forwardspeed > 350.0){
+              forwardspeed = 350.0;
+          }
       }
   }
 
@@ -354,11 +359,11 @@ void MainWindow::getOdometry(TKobukiData robotData)
   void MainWindow::rotationSpeedCtr(Position refPos)
   {
       double rotErr;
-      double Kp = 1.0;
+      double Kp = 1.1;
       rotErr = -phi +atan2(refPos.y - y, refPos.x- x);
       //rotErr = -phi + PI/4;
       //std::cout<<rotErr<<std::endl;
-      if(abs(rotErr) < 3.14159265/150){
+      if(abs(rotErr) < 3.14159265/120){
           rotationspeed = 0;
           orientationReached = true;
       }
