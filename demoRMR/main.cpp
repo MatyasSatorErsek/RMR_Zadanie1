@@ -8,5 +8,10 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();
 
-    return a.exec();
+    //std::thread inputThread(std::bind(&MainWindow::consoleInputThread, &w));
+
+    int guiResult = a.exec();
+    //inputThread.join();
+
+    return guiResult;
 }

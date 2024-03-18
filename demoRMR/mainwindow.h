@@ -22,11 +22,10 @@
 #include<windows.h>
 #include "robot.h"
 #include <algorithm> // Include this header for std::min and std::max
-
-
+#include <mutex>
 
 #define TICK_TO_METER 0.000085292090497737556558
-#define ANGLE_TOLERANCE PI*0.1
+#define ANGLE_TOLERANCE PI*0.12
 #define ENCODER_MAX_VALUE 65535
 
 namespace Ui {
@@ -63,6 +62,8 @@ public:
 
     int processThisRobot(TKobukiData robotdata);
 
+    queue<Position> referencePositions;
+
 
 
 private slots:
@@ -81,6 +82,8 @@ private slots:
     void on_pushButton_clicked();
     void getNewFrame();
 
+    void on_pushButton_10_clicked();
+
 private:
 
     //--skuste tu nic nevymazat... pridavajte co chcete, ale pri odoberani by sa mohol stat nejaky drobny problem, co bude vyhadzovat chyby
@@ -98,8 +101,6 @@ private:
      double x;
      double y;
      double phi;
-
-     queue<Position> referencePositions;
 
      int encRight;
      int encLeft;

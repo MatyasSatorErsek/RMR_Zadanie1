@@ -35,10 +35,7 @@ double tickToMeter(int encValPrev, int encValCur)
     return distance;
 }
 
-void createRampValue()
-{
-    double increment = 0.01;
-}
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -65,9 +62,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     posReached = false; orientationReached = false;
 
-    referencePositions.push(Position(0.3,0.3,0));
+    /*referencePositions.push(Position(0.3,0.3,0));
     referencePositions.push(Position(0.5,0.2,0));
-    referencePositions.push(Position(0.1,-0.15,0));
+    referencePositions.push(Position(0.1,-0.15,0));*/
 
 
 
@@ -117,8 +114,8 @@ void MainWindow::paintEvent(QPaintEvent *event)
 /// prepojenie signal slot je vo funkcii  on_pushButton_9_clicked
 void  MainWindow::setUiValues(double robotX,double robotY,double robotFi)
 {
-     ui->lineEdit_2->setText(QString::number(robotX));
-     ui->lineEdit_3->setText(QString::number(robotY));
+     //ui->lineEdit_2->setText(QString::number(robotX));
+     //ui->lineEdit_3->setText(QString::number(robotY));
      ui->lineEdit_4->setText(QString::number(robotFi));
 }
 
@@ -367,8 +364,8 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
   void MainWindow::rotationSpeedCtr(Position refPos) {
       double rotErr;
-      double Kp = 1.0;
-      double maxRotationSpeed = 3.0; // Set maximum rotation speed
+      double Kp = 1.3;
+      double maxRotationSpeed = 2.5; // Set maximum rotation speed
       double rampRate = 0.2; // Set ramp rate
 
       rotErr = -phi + atan2(refPos.y - y, refPos.x - x);
@@ -396,4 +393,13 @@ void MainWindow::getOdometry(TKobukiData robotData)
           rotationspeed = max(rotationspeed, -maxRotationSpeed);
       }
   }
+
+
+void MainWindow::on_pushButton_10_clicked()
+{
+    double x_ref = ui->lineEdit_5->text().toDouble();
+    double y_ref = ui->lineEdit_6->text().toDouble();
+
+    referencePositions.push(Position(x_ref,y_ref,0.0));
+}
 
