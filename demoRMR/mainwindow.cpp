@@ -43,8 +43,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
-    ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
-    //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
+    //ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
+    ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
   //  cap.open("http://192.168.1.11:8000/stream.mjpg");
     ui->setupUi(this);
     datacounter=0;
@@ -114,9 +114,9 @@ void MainWindow::paintEvent(QPaintEvent *event)
 /// prepojenie signal slot je vo funkcii  on_pushButton_9_clicked
 void  MainWindow::setUiValues(double robotX,double robotY,double robotFi)
 {
-     //ui->lineEdit_2->setText(QString::number(robotX));
-     //ui->lineEdit_3->setText(QString::number(robotY));
-     ui->lineEdit_4->setText(QString::number(robotFi));
+     ui->lineEdit_2->setText(QString::number(x));
+     ui->lineEdit_3->setText(QString::number(y));
+     ui->lineEdit_4->setText(QString::number(phi));
 }
 
 ///toto je calback na data z robota, ktory ste podhodili robotu vo funkcii on_pushButton_9_clicked
@@ -166,7 +166,7 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
             forwardSpeedCtr(currRefPos);
             robot.setTranslationSpeed(forwardspeed);
             double alfa = -phi +atan2(currRefPos.y - y, currRefPos.x- x);
-            if(abs(alfa)>ANGLE_TOLERANCE)
+            if(abs(alfa)>ANGLE_TOLERANCE*0.9)
             {
                 orientationReached = false;
             }
@@ -333,9 +333,9 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
   void MainWindow::forwardSpeedCtr(Position refPos) {
       double distErr;
-      double Kp = 400.0;
-      double maxForwardSpeed = 450.0; // Set maximum forward speed
-      double rampRate = 10.0; // Set ramp rate
+      double Kp = 450.0;
+      double maxForwardSpeed = 650.0; // Set maximum forward speed
+      double rampRate = 15.0; // Set ramp rate
 
       distErr = sqrt(pow(refPos.x - x, 2) + pow(refPos.y - y, 2));
 
@@ -348,7 +348,7 @@ void MainWindow::getOdometry(TKobukiData robotData)
           double desiredForwardSpeed = Kp * distErr;
 
           // Apply ramping to the desired forward speed
-          if (abs(desiredForwardSpeed - forwardspeed) > rampRate) {
+          if ((desiredForwardSpeed - forwardspeed) > rampRate) {
               if (desiredForwardSpeed > forwardspeed)
                   forwardspeed += rampRate; // Increase forward speed gradually
               else
@@ -364,13 +364,13 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
   void MainWindow::rotationSpeedCtr(Position refPos) {
       double rotErr;
-      double Kp = 1.3;
+      double Kp = 1.5;
       double maxRotationSpeed = 2.5; // Set maximum rotation speed
       double rampRate = 0.2; // Set ramp rate
 
       rotErr = -phi + atan2(refPos.y - y, refPos.x - x);
 
-      if (abs(rotErr) < 3.14159265 / 120) {
+      if ((rotErr) < 3.14159265 / 90) {
           // If the error is small, stop rotation
           rotationspeed = 0;
           orientationReached = true;

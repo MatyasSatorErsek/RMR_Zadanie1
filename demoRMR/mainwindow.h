@@ -25,7 +25,7 @@
 #include <mutex>
 
 #define TICK_TO_METER 0.000085292090497737556558
-#define ANGLE_TOLERANCE PI*0.12
+#define ANGLE_TOLERANCE PI*0.15
 #define ENCODER_MAX_VALUE 65535
 
 namespace Ui {
