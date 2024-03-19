@@ -403,6 +403,7 @@ void MainWindow::on_pushButton_10_clicked()
     referencePositions.push(Position(x_ref,y_ref,0.0));
 }
 
+
 void MainWindow::getObstacles()
 {
 
