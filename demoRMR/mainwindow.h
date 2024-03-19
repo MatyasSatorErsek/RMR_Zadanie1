@@ -32,6 +32,15 @@ namespace Ui {
 class MainWindow;
 }
 
+typedef struct obstacle{
+
+    double rightAngle;
+    double leftAngle;
+    double rightDis;
+    double leftDis;
+
+}Obstacle;
+
 typedef struct position
 {
     double x;
@@ -83,6 +92,8 @@ private slots:
     void getNewFrame();
 
     void on_pushButton_10_clicked();
+
+    void getObstacles();
 
 private:
 

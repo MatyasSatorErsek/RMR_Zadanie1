@@ -166,7 +166,7 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
             forwardSpeedCtr(currRefPos);
             robot.setTranslationSpeed(forwardspeed);
             double alfa = -phi +atan2(currRefPos.y - y, currRefPos.x- x);
-            if(abs(alfa)>ANGLE_TOLERANCE*0.9)
+            if(abs(alfa)>ANGLE_TOLERANCE)
             {
                 orientationReached = false;
             }
@@ -403,3 +403,7 @@ void MainWindow::on_pushButton_10_clicked()
     referencePositions.push(Position(x_ref,y_ref,0.0));
 }
 
+void MainWindow::getObstacles()
+{
+
+}
