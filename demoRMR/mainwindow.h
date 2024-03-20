@@ -21,8 +21,7 @@
 #include<queue>
 #include<windows.h>
 #include "robot.h"
-#include <algorithm> // Include this header for std::min and std::max
-#include <mutex>
+#include "map_loader.h"
 
 #define TICK_TO_METER 0.000085292090497737556558
 #define ANGLE_TOLERANCE PI*0.15
@@ -31,15 +30,6 @@
 namespace Ui {
 class MainWindow;
 }
-
-typedef struct obstacle{
-
-    double rightAngle;
-    double leftAngle;
-    double rightDis;
-    double leftDis;
-
-}Obstacle;
 
 typedef struct position
 {

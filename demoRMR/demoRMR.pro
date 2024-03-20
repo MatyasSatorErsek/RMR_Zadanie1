@@ -19,8 +19,10 @@ LIBS += -L../bin -lrobot
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp\
+        map_loader.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h\
+            map_loader.h
 
 FORMS    += mainwindow.ui
