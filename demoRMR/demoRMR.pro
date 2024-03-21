@@ -20,9 +20,13 @@ LIBS += -L../bin -lrobot
 
 SOURCES += main.cpp\
         mainwindow.cpp\
-        map_loader.cpp
+        map_loader.cpp\
+    trajectory.cpp
 
 HEADERS  += mainwindow.h\
-            map_loader.h
+            map_loader.h \
+            trajectory.h
 
 FORMS    += mainwindow.ui
+
+#RESOURCES += priestor.txt

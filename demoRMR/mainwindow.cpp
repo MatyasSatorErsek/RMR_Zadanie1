@@ -2,6 +2,9 @@
 #include "ui_mainwindow.h"
 #include <QPainter>
 #include <math.h>
+#include <QTemporaryFile>
+#include <QFile>
+#include <cstdio>
 
 
 ///TOTO JE DEMO PROGRAM...AK SI HO NASIEL NA PC V LABAKU NEPREPISUJ NIC,ALE SKOPIRUJ SI MA NIEKAM DO INEHO FOLDERA
@@ -11,6 +14,19 @@
 /// KED SA NAJBLIZSIE PUSTIS DO PRACE, SKONTROLUJ CI JE MIESTO TOHTO TEXTU TVOJ IDENTIFIKATOR
 /// AZ POTOM ZACNI ROBIT... AK TO NESPRAVIS, POJDU BODY DOLE... A NIE JEDEN,ALEBO DVA ALE BUDES RAD
 /// AK SA DOSTANES NA SKUSKU
+
+char* openMyFile(){
+    QTemporaryFile tempFile;
+    tempFile.open(); // Open the temporary file
+    QFile resourceFile(":\\priestor.txt");
+    resourceFile.open(QIODevice::ReadOnly);
+    tempFile.write(resourceFile.readAll());
+    resourceFile.close();
+
+    const char* fileName = tempFile.fileName().toStdString().c_str();
+    return (char *)fileName;
+
+}
 
 int evalEnc(int oldDiff)
 {
@@ -66,7 +82,7 @@ MainWindow::MainWindow(QWidget *parent) :
     referencePositions.push(Position(0.5,0.2,0));
     referencePositions.push(Position(0.1,-0.15,0));*/
 
-
+    ml.load_map((char *)"C:\\Codes\\RMR\\demoRMR-all\\demoRMR\\novy_priestor.txt",mapArea);
 
 }
 
@@ -152,7 +168,7 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
     std::cout << "Y:" << y << std::endl;
     std::cout << "Phi:" << phi * (180 / 3.14159265) << std::endl;*/
 
-    if(!referencePositions.empty())
+    /*if(!referencePositions.empty())
     {
         Position currRefPos = referencePositions.front();
         if(!orientationReached)
@@ -177,7 +193,7 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
             orientationReached = false;
             posReached = false;
         }
-    }
+    }*/
 
 
 

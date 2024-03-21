@@ -110,6 +110,9 @@ private:
      bool posReached;
      bool orientationReached;
 
+     map_loader ml;
+     TMapArea mapArea;
+
      void getOdometry(TKobukiData robotdata);
 
      void forwardSpeedCtr(Position refPos);
