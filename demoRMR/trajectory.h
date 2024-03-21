@@ -2,16 +2,19 @@
 #define TRAJECTORY_H
 
 #include <vector>
+#include "map_loader.h"
 
-#define ROOM_SIZE 5.0
-#define TILE_DIM 0.2
+#define ROOM_SIZE 500.0
+#define TILE_DIM 20
 
 using std::vector;
 
 class TrajectoryPlan
 {
 public:
-    TrajectoryPlan(double room_size_,double tile_dim_);
+    TrajectoryPlan(double room_size_,double tile_dim_,char* filename);
+
+    bool containsWall(int row, int col);
 
 private:
     double roomSize;
@@ -19,6 +22,8 @@ private:
     int numOfTiles;
 
     vector<vector<int>> tiles;
+    TMapArea mapArea;
+
 
 };
 

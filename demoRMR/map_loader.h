@@ -37,9 +37,11 @@ class map_loader
 {
 public:
     map_loader();
-    void load_map(char *filename,TMapArea &mapss);
+
     void load_map_new(const QString& filename, TMapArea& mapss);
 
 };
+
+void load_map(char *filename,TMapArea &mapss);
 
 #endif // MAP_LOADER_H

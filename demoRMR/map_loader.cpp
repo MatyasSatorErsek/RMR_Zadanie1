@@ -9,7 +9,7 @@ map_loader::map_loader()
 {
 }
 
- void map_loader::load_map(char *filename,TMapArea &mapss)
+ void load_map(char *filename,TMapArea &mapss)
  {
 
 

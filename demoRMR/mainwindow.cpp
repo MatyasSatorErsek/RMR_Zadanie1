@@ -83,6 +83,7 @@ MainWindow::MainWindow(QWidget *parent) :
     referencePositions.push(Position(0.1,-0.15,0));*/
 
     ml.load_map((char *)"C:\\Codes\\RMR\\demoRMR-all\\demoRMR\\novy_priestor.txt",mapArea);
+    std::cout<< "Wall points: " << mapArea.wall.numofpoints<< std::endl;
 
 }
 
