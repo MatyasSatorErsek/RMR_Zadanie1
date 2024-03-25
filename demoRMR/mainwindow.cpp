@@ -15,18 +15,6 @@
 /// AZ POTOM ZACNI ROBIT... AK TO NESPRAVIS, POJDU BODY DOLE... A NIE JEDEN,ALEBO DVA ALE BUDES RAD
 /// AK SA DOSTANES NA SKUSKU
 
-char* openMyFile(){
-    QTemporaryFile tempFile;
-    tempFile.open(); // Open the temporary file
-    QFile resourceFile(":\\priestor.txt");
-    resourceFile.open(QIODevice::ReadOnly);
-    tempFile.write(resourceFile.readAll());
-    resourceFile.close();
-
-    const char* fileName = tempFile.fileName().toStdString().c_str();
-    return (char *)fileName;
-
-}
 
 int evalEnc(int oldDiff)
 {
@@ -56,11 +44,12 @@ double tickToMeter(int encValPrev, int encValCur)
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
+    //tp(ROOM_SIZE,TILE_DIM, (char * )"C:\\Codes\\RMR\\demoRMR-all\\demoRMR\\novy_priestor.txt")
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
-    //ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
-    ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
+    ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
+    //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
   //  cap.open("http://192.168.1.11:8000/stream.mjpg");
     ui->setupUi(this);
     datacounter=0;
@@ -82,8 +71,7 @@ MainWindow::MainWindow(QWidget *parent) :
     referencePositions.push(Position(0.5,0.2,0));
     referencePositions.push(Position(0.1,-0.15,0));*/
 
-    ml.load_map((char *)"C:\\Codes\\RMR\\demoRMR-all\\demoRMR\\novy_priestor.txt",mapArea);
-    std::cout<< "Wall points: " << mapArea.wall.numofpoints<< std::endl;
+    //tp.makeTiles();
 
 }
 

@@ -25,9 +25,15 @@ bool TrajectoryPlan::containsWall(int row , int col)
     topRight = {(row+1)*tileDim,(col+1)*tileDim};
 
 
-    for(int i = 1; i < mapArea.wall.numofpoints;  i++){
+    for(int i = 0; i < mapArea.wall.numofpoints;  i++){
         Point wallPointA, wallPointB;
-        wallPointA = mapArea.wall.points[i-1].point;
+
+        if(i == 0){
+            wallPointA = mapArea.wall.points[mapArea.wall.numofpoints -1].point;
+        }
+        else{
+            wallPointA = mapArea.wall.points[i-1].point;
+        }
         wallPointB = mapArea.wall.points[i].point;
 
         //If point A is higher than point B
@@ -46,4 +52,21 @@ bool TrajectoryPlan::containsWall(int row , int col)
     }
 
     return false;
+}
+
+void TrajectoryPlan::makeTiles(){
+    for(int i = 0; i < numOfTiles; i++){
+        for(int j = 0; j <  numOfTiles; j++){
+            if(containsWall(i,j)){
+                tiles[i][j] = 1;
+            }
+            else{
+                tiles[i][j] = 0;
+            }
+            std::cout<<tiles[i][j] << " ";
+        }
+        std::cout<<'\n';
+    }
+
+
 }

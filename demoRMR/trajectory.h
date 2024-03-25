@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "map_loader.h"
+#include <iostream>>
 
 #define ROOM_SIZE 500.0
 #define TILE_DIM 20
@@ -15,6 +16,8 @@ public:
     TrajectoryPlan(double room_size_,double tile_dim_,char* filename);
 
     bool containsWall(int row, int col);
+    void makeTiles();
+
 
 private:
     double roomSize;
