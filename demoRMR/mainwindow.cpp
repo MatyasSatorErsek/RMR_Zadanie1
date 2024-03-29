@@ -2,7 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QPainter>
 #include <math.h>
-
+#include <mapka.h>
 
 ///TOTO JE DEMO PROGRAM...AK SI HO NASIEL NA PC V LABAKU NEPREPISUJ NIC,ALE SKOPIRUJ SI MA NIEKAM DO INEHO FOLDERA
 /// AK HO MAS Z GITU A ROBIS NA LABAKOVOM PC, TAK SI HO VLOZ DO FOLDERA KTORY JE JASNE ODLISITELNY OD TVOJICH KOLEGOV
@@ -39,18 +39,19 @@ double tickToMeter(int encValPrev, int encValCur)
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    m(new Mapka())
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
-    //ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
-    ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
+    ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
+    //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
   //  cap.open("http://192.168.1.11:8000/stream.mjpg");
     ui->setupUi(this);
     datacounter=0;
+    m->show();
   //  timer = new QTimer(this);
 //    connect(timer, SIGNAL(timeout()), this, SLOT(getNewFrame()));
-
 
 
     datacounter=0;
@@ -61,6 +62,10 @@ MainWindow::MainWindow(QWidget *parent) :
     distance = 0;
 
     posReached = false; orientationReached = false;
+
+    movingLinear = true;
+
+
 
     /*referencePositions.push(Position(0.3,0.3,0));
     referencePositions.push(Position(0.5,0.2,0));
@@ -130,14 +135,14 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
     /// ale nic vypoctovo narocne - to iste vlakno ktore cita data z robota
     ///teraz tu posielam rychlosti na zaklade toho co setne joystick a vypisujeme data z robota(kazdy 5ty krat. ale mozete skusit aj castejsie). vyratajte si polohu. a vypiste spravnu
     /// tuto cast mozete vklude vymazat,alebo znasilnit na vas regulator alebo ake mate pohnutky
-    /*if(forwardspeed==0 && rotationspeed!=0)
-        robot.setRotationSpeed(rotationspeed);
-    else if(forwardspeed!=0 && rotationspeed==0)
-        robot.setTranslationSpeed(forwardspeed);
-    else if((forwardspeed!=0 && rotationspeed!=0))
-        robot.setArcSpeed(forwardspeed,forwardspeed/rotationspeed);
-    else
-        robot.setTranslationSpeed(0);*/
+    // if(forwardspeed==0 && rotationspeed!=0)
+    //     robot.setRotationSpeed(rotationspeed);
+    // else if(forwardspeed!=0 && rotationspeed==0)
+    //     robot.setTranslationSpeed(forwardspeed);
+    // else if((forwardspeed!=0 && rotationspeed!=0))
+    //     robot.setArcSpeed(forwardspeed,forwardspeed/rotationspeed);
+    // else
+    //     robot.setTranslationSpeed(0);
 
 
 
@@ -157,6 +162,7 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
         Position currRefPos = referencePositions.front();
         if(!orientationReached)
         {
+            movingLinear = false;
             rotationSpeedCtr(currRefPos);
             robot.setRotationSpeed(rotationspeed);
         }
@@ -170,6 +176,9 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
             {
                 orientationReached = false;
             }
+        }
+        if(orientationReached) {
+            movingLinear = true;
         }
         if(orientationReached && posReached)
         {
@@ -209,12 +218,51 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
 int MainWindow::processThisLidar(LaserMeasurement laserData)
 {
 
-
     memcpy( &copyOfLaserData,&laserData,sizeof(LaserMeasurement));
+
+
+    for(int var = 0; var < copyOfLaserData.numberOfScans; var++) {
+        // Calculate global X and Y positions based on scan data
+        if(copyOfLaserData.Data[var].scanDistance > 5) {
+            double globalX = x*1000 + copyOfLaserData.Data[var].scanDistance * cos((phi*180/_Pi + 360 - copyOfLaserData.Data[var].scanAngle)*_Pi/180);
+            double globalY = y*1000 + copyOfLaserData.Data[var].scanDistance * sin((phi*180/_Pi + 360 - copyOfLaserData.Data[var].scanAngle)*_Pi/180);
+
+            int gridX = 60 + static_cast<int>(globalX / 100);
+            int gridY = 119 - (60 + static_cast<int>(globalY / 100));
+
+            // std::cout<<x<<std::endl;
+            // std::cout<<y<<std::endl;
+            // std::cout<<phi<<std::endl;
+
+            if (movingLinear) {
+                if(gridX >= 0 && gridX < 120 && gridY >= 0 && gridY < 120) {
+                    mapa[gridY][gridX] = 1; // Mark the obstacle on the map
+                }
+            }
+
+            mapa[119 - 60 - static_cast<int>(y*10)][(60 + static_cast<int>(x*10))] = 2;
+            mapa[119 - 60 - static_cast<int>(y*10) +1][(60 + static_cast<int>(x*10))] = 2;
+            mapa[119 - 60 - static_cast<int>(y*10) -1][(60 + static_cast<int>(x*10))] = 2;
+            mapa[119 - 60 - static_cast<int>(y*10)][(60 + static_cast<int>(x*10)) +1] = 2;
+            mapa[119 - 60 - static_cast<int>(y*10)][(60 + static_cast<int>(x*10)) -1] = 2;
+        }
+    }
+
+    // std::cout<<pointArrayX[0]<<std::endl;
+    // std::cout<<pointArrayY[0]<<std::endl;
     //tu mozete robit s datami z lidaru.. napriklad najst prekazky, zapisat do mapy. naplanovat ako sa prekazke vyhnut.
     // ale nic vypoctovo narocne - to iste vlakno ktore cita data z lidaru
     updateLaserPicture=1;
     update();//tento prikaz prinuti prekreslit obrazovku.. zavola sa paintEvent funkcia
+
+    m->setMapData(mapa);
+    for(int i = 0; i < 120; i++) {
+        for(int j = 0; j < 120; j++) {
+            if(mapa[i][j] == 2) {
+              mapa[i][j] = 0;
+            }
+        }
+    }
 
 
     return 0;

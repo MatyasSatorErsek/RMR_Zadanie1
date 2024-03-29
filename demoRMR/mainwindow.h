@@ -23,6 +23,7 @@
 #include "robot.h"
 #include <algorithm> // Include this header for std::min and std::max
 #include <mutex>
+#include <mapka.h>
 
 #define TICK_TO_METER 0.000085292090497737556558
 #define ANGLE_TOLERANCE PI*0.15
@@ -31,6 +32,11 @@
 namespace Ui {
 class MainWindow;
 }
+
+typedef struct lidarPoint{
+    double posX;
+    double posY;
+}LidarPoint;
 
 typedef struct obstacle{
 
@@ -74,7 +80,6 @@ public:
     queue<Position> referencePositions;
 
 
-
 private slots:
     void on_pushButton_9_clicked();
 
@@ -113,6 +118,12 @@ private:
      double y;
      double phi;
 
+     bool movingLinear;
+
+     int mapa[120][120] = {};
+     double pointArrayX[1000] = {};
+     double pointArrayY[1000] = {};
+
      int encRight;
      int encLeft;
      signed short gyro;
@@ -128,6 +139,8 @@ private:
 
      double forwardspeed;//mm/s
      double rotationspeed;//omega/s
+
+     Mapka *m;
 public slots:
      void setUiValues(double robotX,double robotY,double robotFi);
 signals:

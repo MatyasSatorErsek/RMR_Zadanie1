@@ -19,8 +19,11 @@ LIBS += -L../bin -lrobot
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+        mapka.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    mapka.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    mapka.ui
