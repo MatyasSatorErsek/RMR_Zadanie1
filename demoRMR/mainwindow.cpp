@@ -2,9 +2,9 @@
 #include "ui_mainwindow.h"
 #include <QPainter>
 #include <math.h>
-#include <QTemporaryFile>
-#include <QFile>
-#include <cstdio>
+//#include <QTemporaryFile>
+//#include <QFile>
+//#include <cstdio>
 
 
 ///TOTO JE DEMO PROGRAM...AK SI HO NASIEL NA PC V LABAKU NEPREPISUJ NIC,ALE SKOPIRUJ SI MA NIEKAM DO INEHO FOLDERA
@@ -44,7 +44,6 @@ double tickToMeter(int encValPrev, int encValCur)
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
-    //tp(ROOM_SIZE,TILE_DIM, (char * )"C:\\Codes\\RMR\\demoRMR-all\\demoRMR\\novy_priestor.txt")
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
@@ -56,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent) :
   //  timer = new QTimer(this);
 //    connect(timer, SIGNAL(timeout()), this, SLOT(getNewFrame()));
 
-
+    tp = new TrajectoryPlan(ROOM_SIZE,TILE_DIM, (char * )"C:\\Codes\\RMR\\RMR_Zadanie1\\demoRMR\\novy_priestor.txt");
 
     datacounter=0;
 
@@ -71,13 +70,17 @@ MainWindow::MainWindow(QWidget *parent) :
     referencePositions.push(Position(0.5,0.2,0));
     referencePositions.push(Position(0.1,-0.15,0));*/
 
-    //tp.makeTiles();
+    tp->makeTiles();
+    tp->findObstacles();
+    tp->printField();
+    std::cout<<"Faszom"<<std::endl;
 
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete tp;
 }
 
 void MainWindow::paintEvent(QPaintEvent *event)

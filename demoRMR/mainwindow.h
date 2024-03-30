@@ -22,7 +22,7 @@
 #include<windows.h>
 #include "robot.h"
 #include "map_loader.h"
-#include "trajectory.h""
+#include "trajectory.h"
 
 #define TICK_TO_METER 0.000085292090497737556558
 #define ANGLE_TOLERANCE PI*0.15
@@ -114,7 +114,7 @@ private:
      map_loader ml;
      TMapArea mapArea;
 
-     //TrajectoryPlan tp;
+     TrajectoryPlan* tp;
 
      void getOdometry(TKobukiData robotdata);
 

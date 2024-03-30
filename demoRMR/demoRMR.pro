@@ -21,7 +21,7 @@ LIBS += -L../bin -lrobot
 SOURCES += main.cpp\
         mainwindow.cpp\
         map_loader.cpp\
-    trajectory.cpp
+        trajectory.cpp
 
 HEADERS  += mainwindow.h\
             map_loader.h \
