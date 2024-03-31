@@ -1,6 +1,6 @@
 #include "trajectory.h"
 #include <fstream>
-
+#include <format>
 
 TrajectoryPlan::TrajectoryPlan(double room_size_, double tile_dim_,char* filename){
 
@@ -65,7 +65,7 @@ bool TrajectoryPlan::containsWall(int row , int col)
 void TrajectoryPlan::makeTiles(){
     for(int i = 0; i < numOfTiles; i++){
         for(int j = 0; j <  numOfTiles; j++){
-            if(containsWall(i,j)){
+            if(containsWall(i,j) || i == 0  || i == (numOfTiles - 1) || j == 0 || j == (numOfTiles) -1 ){
                 tiles[i][j] = 1;
 
             }
@@ -81,6 +81,7 @@ void TrajectoryPlan::makeTiles(){
 
 void TrajectoryPlan::printField()
 {
+    checkObstacles(mapArea.obstacle.at(4));
     std::ofstream MyFile("C:\\Codes\\RMR\\RMR_Zadanie1\\demoRMR\\myfile.txt");
 
     for(int i = 0; i < numOfTiles; i++){
@@ -98,7 +99,7 @@ void TrajectoryPlan::printField()
 
 void TrajectoryPlan::checkObstacles(TMapObject obstacle)
 {
-    /*
+
     for(int i = 0; i < obstacle.numofpoints; i++){
         auto currPoint = obstacle.points.at(i%obstacle.numofpoints);
         auto nextPoint = obstacle.points.at((i+1)%obstacle.numofpoints);
@@ -115,45 +116,14 @@ void TrajectoryPlan::checkObstacles(TMapObject obstacle)
         int maxx = std::max(tileXPosCurr,tileXPosNext);
         int maxy = std::max(tileYPosCurr,tileYPosNext);
 
-        if (maxy - miny == maxx- minx){
-            for (int x = minx, y = miny; x <= maxx && x <= maxy; x++, y++) {
-                tiles[x][y] = 1;
-            }
-        }
-        else if (maxy - miny == minx - maxy) {
-            for (int x = minx, y = maxy; x <= maxx && x <= miny; x++, y--) {
+        for(int x = minx; x <= maxx; x++){
+            for(int y = miny; y <= maxy; y++){
                 tiles[x][y] = 1;
             }
         }
 
-    }*/
-
-    double minx,miny,maxx,maxy;
-    minx = obstacle.points.at(0).point.x;
-    miny = obstacle.points.at(0).point.y;
-    maxx = obstacle.points.at(0).point.x;
-    maxy = obstacle.points.at(0).point.y;
-
-    for(int i = 1; i < obstacle.numofpoints; i++){
-        auto x = obstacle.points.at(i).point.x;
-        auto y = obstacle.points.at(i).point.y;
-
-        minx = std::min(minx,x);
-        miny = std::min(miny,y);
-        maxx = std::max(maxx,x);
-        maxy = std::max(maxy,y);
-
     }
-    int minXIdx = (int) minx/tileDim;
-    int minYIdx = (int) miny/tileDim;
-    int maxXIdx = (int) maxx/tileDim;
-    int maxYIdx = (int) maxy/tileDim;
 
-    for(int i = minXIdx; i < maxXIdx; i++){
-        for(int j = minYIdx; j < maxYIdx; j++){
-            tiles[i][j] = 1;
-        }
-    }
 
 }
 
@@ -161,5 +131,55 @@ void TrajectoryPlan::findObstacles()
 {
     for(int i = 0; i < mapArea.numofObjects; i++){
         checkObstacles(mapArea.obstacle.at(i));
+    }
+}
+
+
+bool TrajectoryPlan::markStart(double x, double y)
+{
+    startRow = (int) x/tileDim;
+    startCol = (int) y/tileDim;
+
+    if(tiles[startRow][startCol] == 0){
+        tiles[startRow][startCol] = START;
+        return true;
+    }
+    else{
+        std::cout<< "Unable to mark start";
+        return false;
+    }
+
+}
+
+bool TrajectoryPlan::markTarget(double x, double y)
+{
+    targetRow = (int) x/tileDim;
+    targetCol = (int) y/tileDim;
+
+    if(tiles[targetRow][targetCol] == 0){
+        tiles[targetRow][targetCol] = TARGET;
+        return true;
+    }
+    else{
+        std::cout<< "Unable to mark target";
+        return false;
+    }
+
+}
+
+void TrajectoryPlan::labelTiles(){
+    int label = 3;
+    while((tiles[startRow - 1][startCol -1] ==0 ) && tiles[startRow + 1][startCol + 1] ==0 ){
+        for(int row = 0; row < numOfTiles; row++){
+            for(int col = 0; col < numOfTiles; col++){
+                if(tiles[row][col] == label-1){
+                    if(tiles[row-1][col] == 0) tiles[row-1][col] = label;
+                    if(tiles[row+1][col] == 0) tiles[row+1][col] = label;
+                    if(tiles[row][col-1] == 0) tiles[row][col-1] = label;
+                    if(tiles[row][col+1] == 0) tiles[row][col+1] = label;
+                }
+            }
+        }
+        label++;
     }
 }

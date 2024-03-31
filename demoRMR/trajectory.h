@@ -6,8 +6,9 @@
 #include <iostream>>
 
 #define ROOM_SIZE 600.0
-#define TILE_DIM 10
-
+#define TILE_DIM 15
+#define START -1
+#define TARGET 2
 
 
 using std::vector;
@@ -23,6 +24,11 @@ public:
     void printField();
     void checkObstacles(TMapObject obstacle);
     void findObstacles();
+    bool markStart(double x, double y);
+    bool markTarget(double x, double y);
+    void labelTiles();
+
+    int** tiles;
 
 
 private:
@@ -30,7 +36,11 @@ private:
     double tileDim;
     int numOfTiles;
 
-    int** tiles;
+    int startRow;
+    int startCol;
+    int targetRow;
+    int targetCol;
+
     TMapArea mapArea;
 
 

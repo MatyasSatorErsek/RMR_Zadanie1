@@ -72,6 +72,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     tp->makeTiles();
     tp->findObstacles();
+    tp->markStart(30,40);
+    tp->markTarget(360,400);
+    tp->labelTiles();
     tp->printField();
     std::cout<<"Faszom"<<std::endl;
 
