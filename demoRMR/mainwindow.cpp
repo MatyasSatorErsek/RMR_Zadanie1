@@ -66,23 +66,21 @@ MainWindow::MainWindow(QWidget *parent) :
 
     posReached = false; orientationReached = false;
 
-    /*referencePositions.push(Position(0.3,0.3,0));
-    referencePositions.push(Position(0.5,0.2,0));
-    referencePositions.push(Position(0.1,-0.15,0));*/
-
     tp->makeTiles();
     tp->makeWallTiles();
     tp->findObstacles();
-    tp->markStart(50,50);
-    tp->markTarget(300,420);
+    Point start = {50,50},target = {300,280};
+    tp->markStart(start.x,start.y);
+    tp->markTarget(target.x,target.y);
     tp->labelTiles();
     //tp->printField();
     referencePositions = tp->generateTrajectory();
-    for(int i = 0; i< referencePositions.size(); i++){
+    while(!referencePositions.empty()){
         Position pos = referencePositions.front();
         std::cout<<"[ "<< pos.x<< " , "<<pos.y<<" ]"<<std::endl;
         referencePositions.pop();
     }
+    std::cout<<"Szohi buzerant"<<std::endl;
 }
 
 MainWindow::~MainWindow()
