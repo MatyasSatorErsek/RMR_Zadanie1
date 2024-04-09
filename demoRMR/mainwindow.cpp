@@ -71,13 +71,18 @@ MainWindow::MainWindow(QWidget *parent) :
     referencePositions.push(Position(0.1,-0.15,0));*/
 
     tp->makeTiles();
+    tp->makeWallTiles();
     tp->findObstacles();
-    tp->markStart(30,40);
-    tp->markTarget(360,400);
+    tp->markStart(50,50);
+    tp->markTarget(300,420);
     tp->labelTiles();
-    tp->printField();
-    std::cout<<"Faszom"<<std::endl;
-
+    //tp->printField();
+    referencePositions = tp->generateTrajectory();
+    for(int i = 0; i< referencePositions.size(); i++){
+        Position pos = referencePositions.front();
+        std::cout<<"[ "<< pos.x<< " , "<<pos.y<<" ]"<<std::endl;
+        referencePositions.pop();
+    }
 }
 
 MainWindow::~MainWindow()

@@ -1,6 +1,6 @@
 #include "trajectory.h"
 #include <fstream>
-#include <format>
+
 
 TrajectoryPlan::TrajectoryPlan(double room_size_, double tile_dim_,char* filename){
 
@@ -33,6 +33,7 @@ bool TrajectoryPlan::containsWall(int row , int col)
     topRight = {(row+1)*tileDim,(col+1)*tileDim};
 
 
+
     for(int i = 0; i < mapArea.wall.numofpoints;  i++){
         Point wallPointA, wallPointB;
 
@@ -44,18 +45,69 @@ bool TrajectoryPlan::containsWall(int row , int col)
         }
         wallPointB = mapArea.wall.points[i].point;
 
+        if((wallPointA.x >= topLeft.x && wallPointA.x <= bottomRight.x) && (wallPointA.y >= topLeft.y && wallPointA.y <= bottomRight.y))
+            return true;
+        if((wallPointB.x >= topLeft.x && wallPointB.x <= bottomRight.x) && (wallPointB.y >= topLeft.y && wallPointB.y <= bottomRight.y))
+            return true;
+
+
         //If point A is higher than point B
-        if(wallPointB.y < wallPointA.y){
+        if(wallPointB.x < wallPointA.x){
             Point t = wallPointB;
             wallPointB = wallPointA;
             wallPointA = t;
         }
 
-        bool A1  = ((wallPointB.x > topRight.x) && (wallPointB.y > topRight.y)) && ((wallPointA.x < bottomLeft.x) && (wallPointA.y < bottomLeft.y));
+        // Check for potential division by zero (vertical line)
+        if (abs(wallPointB.x - wallPointA.x) < 1e-6) {  // Tolerance for floating-point precision
+            // Line is vertical, check if x-coordinate is within rectangle bounds
+            if (wallPointA.x >= topLeft.x && wallPointA.x <= bottomRight.x) {
+                return true;  // Line intersects if x is within bounds
+            }
+            //return false;
+        }
+
+        double slope = (wallPointB.y - wallPointA.y)/(wallPointB.x - wallPointA.x);
+        double inter = wallPointA.y - slope*wallPointA.x;
+
+        // Top Edge
+        if (slope != 0 && inter <= topLeft.y && inter >= topRight.y) {
+            double x = (topLeft.y - inter) / slope;
+            if (x >= topLeft.x && x <= topRight.x) {
+                return true;
+            }
+        }
+
+        // Right edge
+        if (inter <= topRight.y && inter >= bottomRight.y) {
+            double y = slope * bottomRight.x + inter;
+            if (y >= bottomRight.y && y <= topRight.y) {
+                return true;
+            }
+        }
+
+        // Bottom edge
+        if (slope != 0 && inter <= bottomLeft.y && inter >= bottomRight.y) {
+            double x = (bottomLeft.y - inter) / slope;
+            if (x >= bottomLeft.x && x <= bottomRight.x) {
+                return true;
+            }
+        }
+
+        // Left edge
+        if (inter <= topLeft.y && inter >= bottomLeft.y) {
+            double y = slope * topLeft.x + inter;
+            if (y >= bottomLeft.y && y <= topLeft.y) {
+                return true;
+            }
+        }
+
+        /*bool A1  = ((wallPointB.x > topRight.x) && (wallPointB.y > topRight.y)) && ((wallPointA.x < bottomLeft.x) && (wallPointA.y < bottomLeft.y));
         bool A2  = ((wallPointB.x < topLeft.x) && (wallPointB.y > topLeft.y)) && ((wallPointA.x > bottomRight.x) && (wallPointA.y < bottomRight.y));
 
+
         if(A1 || A2)
-            return true;
+            return true;*/
 
     }
 
@@ -65,23 +117,21 @@ bool TrajectoryPlan::containsWall(int row , int col)
 void TrajectoryPlan::makeTiles(){
     for(int i = 0; i < numOfTiles; i++){
         for(int j = 0; j <  numOfTiles; j++){
-            if(containsWall(i,j) || i == 0  || i == (numOfTiles - 1) || j == 0 || j == (numOfTiles) -1 ){
-                tiles[i][j] = 1;
 
+            if(i == 0 || j == 0 || i == (numOfTiles -1) || j == (numOfTiles -1)){
+                tiles[i][j] = 1;
             }
             else{
                 tiles[i][j] = 0;
             }
-            //std::cout<<tiles[i][j]<<" ";
         }
-        //std::cout<<std::endl;
     }
 }
 
 
 void TrajectoryPlan::printField()
 {
-    checkObstacles(mapArea.obstacle.at(4));
+
     std::ofstream MyFile("C:\\Codes\\RMR\\RMR_Zadanie1\\demoRMR\\myfile.txt");
 
     for(int i = 0; i < numOfTiles; i++){
@@ -169,7 +219,7 @@ bool TrajectoryPlan::markTarget(double x, double y)
 
 void TrajectoryPlan::labelTiles(){
     int label = 3;
-    while((tiles[startRow - 1][startCol -1] ==0 ) && tiles[startRow + 1][startCol + 1] ==0 ){
+    while((tiles[startRow -1 ][startCol -1] ==0 ) || (tiles[startRow +1][startCol+1] ==0 )){
         for(int row = 0; row < numOfTiles; row++){
             for(int col = 0; col < numOfTiles; col++){
                 if(tiles[row][col] == label-1){
@@ -182,4 +232,85 @@ void TrajectoryPlan::labelTiles(){
         }
         label++;
     }
+    tiles[startRow][startCol] = label;
+}
+
+void TrajectoryPlan::makeWallTiles(){
+
+    Point A,B;
+
+    for(int idx = 0; idx < mapArea.wall.numofpoints; idx++){
+        if(idx == 0){
+            A = mapArea.wall.points[mapArea.wall.numofpoints -1].point;
+        }
+        else{
+            A = mapArea.wall.points[idx-1].point;
+        }
+        B = mapArea.wall.points[idx].point;
+
+        int minx = (int) std::min(A.x,B.x)/tileDim;
+        int miny = (int)std::min(A.y,B.y)/tileDim;
+        int maxx = (int)std::max(A.x,B.x)/tileDim;
+        int maxy = (int)std::max(A.y,B.y)/tileDim;
+
+        for(int i = minx; i <= maxx; i++){
+            for(int j = miny; j <= maxy; j++){
+                tiles[i][j] = 1;
+            }
+        }
+    }
+
+
+}
+
+queue<Position> TrajectoryPlan::generateTrajectory(){
+    queue<Position> traj;
+    int currRow = startRow;
+    int currCol = startCol;
+    int prevRow = currRow, prevCol = currCol;
+
+    std::vector<std::vector<bool>> visitedTiles(numOfTiles, std::vector<bool>(numOfTiles, false));
+    for(int i = 0; i< numOfTiles; i++){
+        for(int j = 0; j< numOfTiles; j++){
+            visitedTiles[i][j] = false;
+        }
+    }
+
+    bool vertical = true;
+    while((currRow != targetRow) && (currCol != targetCol)){
+        if(vertical){
+            if((tiles[currRow][currCol+1] < tiles[currRow][currCol]) && !visitedTiles[currRow][currCol+1] && (tiles[currRow][currCol+1] > 1)){
+                ++currCol;
+            }
+            else if((tiles[currRow][currCol-1] < tiles[currRow][currCol]) && !visitedTiles[currRow][currCol-1]&& (tiles[currRow][currCol-1] > 1)){
+                --currCol;
+            }
+            else{
+                vertical = true;
+                double xp = (currRow*tileDim + tileDim/2)/100;
+                double yp = (currCol*tileDim + tileDim/2)/100;
+                traj.push(Position(xp,yp,0));
+            }
+        }
+        else{
+            if((tiles[currRow+1][currCol] < tiles[currRow][currCol]) && !visitedTiles[currRow+1][currCol]&& (tiles[currRow+1][currCol] > 1)){
+                ++currRow;
+            }
+            else if((tiles[currRow-1][currCol] < tiles[currRow][currCol]) && !visitedTiles[currRow-1][currCol]&& (tiles[currRow-1][currCol] > 1)){
+                --currRow;
+            }
+            else{
+                vertical = false;
+                double xp = (currRow*tileDim + tileDim/2)/100;
+                double yp = (currCol*tileDim + tileDim/2)/100;
+                traj.push(Position(xp,yp,0));
+            }
+        }
+        visitedTiles[currRow][currCol] = true;
+    }
+
+    double xp = (targetRow*tileDim + tileDim/2)/100;
+    double yp = (targetCol*tileDim + tileDim/2)/100;
+    traj.push(Position(xp,yp,0));
+    return traj;
 }

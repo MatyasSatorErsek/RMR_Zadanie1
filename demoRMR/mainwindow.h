@@ -32,21 +32,7 @@ namespace Ui {
 class MainWindow;
 }
 
-typedef struct position
-{
-    double x;
-    double y;
-    double phi;
 
-    position(double xRef,double yRef, double phiRef)
-    {
-        x = xRef;
-        y = yRef;
-        phi = phiRef;
-
-    }
-
-}Position;
 
 ///toto je trieda s oknom.. ktora sa spusti ked sa spusti aplikacia.. su tu vsetky gombiky a spustania...
 class MainWindow : public QMainWindow
