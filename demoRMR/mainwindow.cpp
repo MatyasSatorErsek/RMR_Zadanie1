@@ -44,8 +44,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
-    ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
-    //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
+    //ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
+    ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
   //  cap.open("http://192.168.1.11:8000/stream.mjpg");
     ui->setupUi(this);
     datacounter=0;
@@ -160,10 +160,13 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
     if(!referencePositions.empty())
     {
         Position currRefPos = referencePositions.front();
+        std::cout<<"ide na polohu "<<currRefPos.x<<" "<<currRefPos.y<<" ";
         if(!orientationReached)
         {
+
             movingLinear = false;
             rotationSpeedCtr(currRefPos);
+            std::cout<<"tocim "<<rotationspeed<<std::endl;
             robot.setRotationSpeed(rotationspeed);
         }
         else
@@ -172,19 +175,22 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
             forwardSpeedCtr(currRefPos);
             robot.setTranslationSpeed(forwardspeed);
             double alfa = -phi +atan2(currRefPos.y - y, currRefPos.x- x);
+            alfa=alfa>3.14159 ? alfa-(2*3.14159): alfa< -3.14159 ? alfa+2*3.14159:alfa;
+            std::cout<<"idem rovno "<<forwardspeed<<std::endl;
             if(abs(alfa)>ANGLE_TOLERANCE)
             {
                 orientationReached = false;
             }
         }
         if(orientationReached) {
+            if(orientationReached && posReached)
+            {
+                std::cout<<"dosiahol"<<std::endl;
+                referencePositions.pop();
+                orientationReached = false;
+                posReached = false;
+            }
             movingLinear = true;
-        }
-        if(orientationReached && posReached)
-        {
-            referencePositions.pop();
-            orientationReached = false;
-            posReached = false;
         }
     }
 
@@ -223,28 +229,30 @@ int MainWindow::processThisLidar(LaserMeasurement laserData)
 
     for(int var = 0; var < copyOfLaserData.numberOfScans; var++) {
         // Calculate global X and Y positions based on scan data
-        if(copyOfLaserData.Data[var].scanDistance > 5) {
-            double globalX = x*1000 + copyOfLaserData.Data[var].scanDistance * cos((phi*180/_Pi + 360 - copyOfLaserData.Data[var].scanAngle)*_Pi/180);
-            double globalY = y*1000 + copyOfLaserData.Data[var].scanDistance * sin((phi*180/_Pi + 360 - copyOfLaserData.Data[var].scanAngle)*_Pi/180);
+        if(copyOfLaserData.Data[var].scanDistance > 15 && copyOfLaserData.Data[var].scanDistance < 2500) {
+            if(copyOfLaserData.Data[var].scanDistance < 60 || copyOfLaserData.Data[var].scanDistance > 70) {
+                double globalX = x*1000 + copyOfLaserData.Data[var].scanDistance * cos((phi*180/_Pi + 360 - copyOfLaserData.Data[var].scanAngle)*_Pi/180);
+                double globalY = y*1000 + copyOfLaserData.Data[var].scanDistance * sin((phi*180/_Pi + 360 - copyOfLaserData.Data[var].scanAngle)*_Pi/180);
 
-            int gridX = 60 + static_cast<int>(globalX / 100);
-            int gridY = 119 - (60 + static_cast<int>(globalY / 100));
+                int gridX = 60 + static_cast<int>(globalX / 100);
+                int gridY = 119 - (60 + static_cast<int>(globalY / 100));
 
-            // std::cout<<x<<std::endl;
-            // std::cout<<y<<std::endl;
-            // std::cout<<phi<<std::endl;
+                // std::cout<<x<<std::endl;
+                // std::cout<<y<<std::endl;
+                // std::cout<<phi<<std::endl;
 
-            if (movingLinear) {
-                if(gridX >= 0 && gridX < 120 && gridY >= 0 && gridY < 120) {
-                    mapa[gridY][gridX] = 1; // Mark the obstacle on the map
+                if (movingLinear) {
+                    if(gridX >= 0 && gridX < 120 && gridY >= 0 && gridY < 120) {
+                        mapa[gridY][gridX] = 1; // Mark the obstacle on the map
+                    }
                 }
-            }
 
-            mapa[119 - 60 - static_cast<int>(y*10)][(60 + static_cast<int>(x*10))] = 2;
-            mapa[119 - 60 - static_cast<int>(y*10) +1][(60 + static_cast<int>(x*10))] = 2;
-            mapa[119 - 60 - static_cast<int>(y*10) -1][(60 + static_cast<int>(x*10))] = 2;
-            mapa[119 - 60 - static_cast<int>(y*10)][(60 + static_cast<int>(x*10)) +1] = 2;
-            mapa[119 - 60 - static_cast<int>(y*10)][(60 + static_cast<int>(x*10)) -1] = 2;
+                mapa[119 - 60 - static_cast<int>(y*10)][(60 + static_cast<int>(x*10))] = 2;
+                mapa[119 - 60 - static_cast<int>(y*10) +1][(60 + static_cast<int>(x*10))] = 2;
+                mapa[119 - 60 - static_cast<int>(y*10) -1][(60 + static_cast<int>(x*10))] = 2;
+                mapa[119 - 60 - static_cast<int>(y*10)][(60 + static_cast<int>(x*10)) +1] = 2;
+                mapa[119 - 60 - static_cast<int>(y*10)][(60 + static_cast<int>(x*10)) -1] = 2;
+            }
         }
     }
 
@@ -382,7 +390,7 @@ void MainWindow::getOdometry(TKobukiData robotData)
   void MainWindow::forwardSpeedCtr(Position refPos) {
       double distErr;
       double Kp = 450.0;
-      double maxForwardSpeed = 650.0; // Set maximum forward speed
+      double maxForwardSpeed = 300.0; // Set maximum forward speed
       double rampRate = 15.0; // Set ramp rate
 
       distErr = sqrt(pow(refPos.x - x, 2) + pow(refPos.y - y, 2));
@@ -417,8 +425,8 @@ void MainWindow::getOdometry(TKobukiData robotData)
       double rampRate = 0.2; // Set ramp rate
 
       rotErr = -phi + atan2(refPos.y - y, refPos.x - x);
-
-      if ((rotErr) < 3.14159265 / 90) {
+      rotErr=rotErr>3.14159 ? rotErr-(2*3.14159): rotErr< -3.14159 ? rotErr+2*3.14159:rotErr;
+      if (abs(rotErr) < 3.14159265 / 90) {
           // If the error is small, stop rotation
           rotationspeed = 0;
           orientationReached = true;
