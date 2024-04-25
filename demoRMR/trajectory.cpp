@@ -46,12 +46,12 @@ void TrajectoryPlan::printField()
 
     for(int i = 0; i < numOfTiles; i++){
         for(int j = 0; j < numOfTiles; j++){
-            std::cout<<tiles[j][numOfTiles- i -1]<<" ";
+            //std::cout<<tiles[j][numOfTiles- i -1]<<" ";
             //std::cout<<tiles[i][j]<<" ";
             MyFile<<tiles[j][numOfTiles- i -1]<<" ";
 
         }
-        std::cout<<std::endl;
+        //std::cout<<std::endl;
         MyFile<<std::endl;
     }
     MyFile.close();
@@ -100,8 +100,11 @@ bool TrajectoryPlan::markStart(double x, double y)
     startRow = (int) x/tileDim;
     startCol = (int) y/tileDim;
 
+    startx = x;
+    starty = y;
+
     if(tiles[startRow][startCol] == 0){
-        tiles[startRow][startCol] = START;
+        //tiles[startRow][startCol] = START;
         return true;
     }
     else{
@@ -115,6 +118,9 @@ bool TrajectoryPlan::markTarget(double x, double y)
 {
     targetRow = (int) x/tileDim;
     targetCol = (int) y/tileDim;
+
+    targetx = x;
+    targety = y;
 
     if(tiles[targetRow][targetCol] == 0){
         tiles[targetRow][targetCol] = TARGET;
@@ -173,18 +179,25 @@ void TrajectoryPlan::makeWallTiles(){
 
 }
 
-queue<Position> TrajectoryPlan::generateTrajectory(){
-    queue<Position> traj;
+void TrajectoryPlan::generateTrajectory(queue<Position>& traj){
+    //queue<Position> traj;
     int currRow = startRow, currCol = startCol;
     int updateR = 0, updateC = 1;
     double xp=0,yp=0;
+    std::vector<std::vector<bool>> visited(numOfTiles, std::vector<bool>(numOfTiles, false));
 
-    while((currRow != targetRow)|| (currCol != targetCol)){
+    if((tiles[currRow][currCol-1] < tiles[currRow][currCol+1])&& (tiles[currRow][currCol-1]>1))
+        updateC = -1;
+    else if((tiles[currRow][currCol-1] > tiles[currRow][currCol+1])&& (tiles[currRow][currCol+1]>1))
+        updateC = 1;
 
-        if(tiles[currRow][currCol] <= tiles[currRow+updateR][currCol+updateC]){
+    while((currRow != targetRow) || (currCol != targetCol)){
+
+        if((tiles[currRow][currCol] <= tiles[currRow+updateR][currCol+updateC]) && (tiles[currRow+updateR][currCol+updateC] > 1)){
+        //if(tiles[currRow][currCol] -1 != tiles[currRow+updateR][currCol + updateC]){
             if(updateR == 0 && updateC != 0){
                 updateC = 0;
-                if(tiles[currRow - 1][currCol] < tiles[currRow + 1][currCol]){
+                if((tiles[currRow - 1][currCol] < tiles[currRow + 1][currCol])&& (!visited[currRow - 1][currCol])){
                     updateR = -1;
                 }
                 else{
@@ -193,7 +206,7 @@ queue<Position> TrajectoryPlan::generateTrajectory(){
             }
             else if(updateR != 0 && updateC == 0){
                 updateR = 0;
-                if(tiles[currRow][currCol-1] < tiles[currRow ][currCol+1]){
+                if((tiles[currRow][currCol-1] < tiles[currRow ][currCol+1])&&(!visited[currRow][currCol-1])){
                     updateC = -1;
                 }
                 else{
@@ -203,14 +216,17 @@ queue<Position> TrajectoryPlan::generateTrajectory(){
             xp = (currRow*tileDim + tileDim/2)/100;
             yp = (currCol*tileDim + tileDim/2)/100;
             traj.push(Position(xp,yp,0.0));
-        }
 
+            std::cout<<"["<<xp<<","<<yp<<"]"<<std::endl;
+
+        }
+        visited[currRow][currCol] = true;
         currRow +=updateR;
         currCol += updateC;
     }
-
-    xp = (targetRow*tileDim + tileDim/2)/100;
-    yp = (targetCol*tileDim + tileDim/2)/100;
+    //std::cout<<"While end"<<std::endl;
+    xp = targetx/100;
+    yp = targety/100;
     traj.push(Position(xp,yp,0.0));
-    return traj;
+    //return traj;
 }

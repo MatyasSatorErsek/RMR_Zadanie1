@@ -8,7 +8,7 @@
 
 
 #define ROOM_SIZE 650.0
-#define TILE_DIM 15
+#define TILE_DIM 25
 #define START -1
 #define TARGET 2
 
@@ -47,7 +47,7 @@ public:
     bool markTarget(double x, double y);
     void labelTiles();
     void makeWallTiles();
-    queue<Position> generateTrajectory();
+    void generateTrajectory(queue<Position>& q);
 
     int** tiles;
     int numOfTiles;
@@ -62,6 +62,12 @@ private:
     int startCol;
     int targetRow;
     int targetCol;
+
+    double startx;
+    double starty;
+    double targetx;
+    double targety;
+
 
     TMapArea mapArea;
 

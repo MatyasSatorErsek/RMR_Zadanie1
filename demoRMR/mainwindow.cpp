@@ -47,8 +47,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
-    ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
-    //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
+    //ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
+    ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
   //  cap.open("http://192.168.1.11:8000/stream.mjpg");
     ui->setupUi(this);
     datacounter=0;
@@ -57,30 +57,30 @@ MainWindow::MainWindow(QWidget *parent) :
 
     tp = new TrajectoryPlan(ROOM_SIZE,TILE_DIM, (char * )"C:\\Codes\\RMR\\RMR_Zadanie1\\demoRMR\\novy_priestor.txt");
 
+    /*x = 0.3;
+    y = 0.3;
+    phi = 0;*/
     datacounter=0;
-
-    x = 0;
-    y = 0;
-    phi = 0;
-    distance = 0;
 
     posReached = false; orientationReached = false;
 
     tp->makeTiles();
     tp->makeWallTiles();
     tp->findObstacles();
-    Point start = {50,50},target = {300,280};
-    tp->markStart(start.x,start.y);
-    tp->markTarget(target.x,target.y);
+    start = {522,365},target = {502,421};
+
+    if(!tp->markStart(start.x,start.y))
+        std::cout<<"Wrong start pos"<<std::endl;
+
+    if(!tp->markTarget(target.x,target.y))
+        std::cout<<"Wrong target pos"<<std::endl;
+
+    //std::cout<<"Start and end marked"<<std::endl;
+
     tp->labelTiles();
-    //tp->printField();
-    referencePositions = tp->generateTrajectory();
-    while(!referencePositions.empty()){
-        Position pos = referencePositions.front();
-        std::cout<<"[ "<< pos.x<< " , "<<pos.y<<" ]"<<std::endl;
-        referencePositions.pop();
-    }
-    std::cout<<"Szohi buzerant"<<std::endl;
+    tp->printField();
+    tp->generateTrajectory(referencePositions);
+    std::cout<<"Trajectory generated"<<std::endl;
 }
 
 MainWindow::~MainWindow()
@@ -162,11 +162,8 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
 
 
     getOdometry(robotdata);
-    /*std::cout << "X:" << x << std::endl;
-    std::cout << "Y:" << y << std::endl;
-    std::cout << "Phi:" << phi * (180 / 3.14159265) << std::endl;*/
 
-    /*if(!referencePositions.empty())
+    if(!referencePositions.empty())
     {
         Position currRefPos = referencePositions.front();
         if(!orientationReached)
@@ -180,6 +177,8 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
             forwardSpeedCtr(currRefPos);
             robot.setTranslationSpeed(forwardspeed);
             double alfa = -phi +atan2(currRefPos.y - y, currRefPos.x- x);
+            alfa=alfa>3.14159 ? alfa-(2*3.14159): alfa< -3.14159 ? alfa+2*3.14159:alfa;
+            //std::cout<<"idem rovno "<<forwardspeed<<std::endl;
             if(abs(alfa)>ANGLE_TOLERANCE)
             {
                 orientationReached = false;
@@ -191,6 +190,9 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
             orientationReached = false;
             posReached = false;
         }
+    }
+    /*else{
+        std::cout<<"Target reached"<<std::endl;
     }*/
 
 
@@ -313,9 +315,9 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
     if(datacounter == 0)
     {
-        x = 0;
-        y = 0;
-        phi = 0;
+        x = start.x/100;
+        y = start.y/100;
+        phi =PI;
         distance = 0;
     }
     else
@@ -347,9 +349,9 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
   void MainWindow::forwardSpeedCtr(Position refPos) {
       double distErr;
-      double Kp = 450.0;
-      double maxForwardSpeed = 650.0; // Set maximum forward speed
-      double rampRate = 15.0; // Set ramp rate
+      double Kp = 400.0;
+      double maxForwardSpeed = 350.0; // Set maximum forward speed
+      double rampRate = 10.0; // Set ramp rate
 
       distErr = sqrt(pow(refPos.x - x, 2) + pow(refPos.y - y, 2));
 
@@ -378,13 +380,14 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
   void MainWindow::rotationSpeedCtr(Position refPos) {
       double rotErr;
-      double Kp = 1.5;
-      double maxRotationSpeed = 2.5; // Set maximum rotation speed
+      double Kp = 1.3;
+      double maxRotationSpeed = 2.2; // Set maximum rotation speed
       double rampRate = 0.2; // Set ramp rate
 
       rotErr = -phi + atan2(refPos.y - y, refPos.x - x);
+      rotErr=rotErr>3.14159 ? rotErr-(2*3.14159): rotErr< -3.14159 ? rotErr+2*3.14159:rotErr;
 
-      if ((rotErr) < 3.14159265 / 90) {
+      if (abs(rotErr) < 3.14159265 / 110) {
           // If the error is small, stop rotation
           rotationspeed = 0;
           orientationReached = true;
