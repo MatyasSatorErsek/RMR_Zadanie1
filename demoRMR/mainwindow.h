@@ -121,6 +121,7 @@ private:
      bool movingLinear;
 
      int mapa[120][120] = {};
+     int edgeMap[120][120] = {};
      double pointArrayX[1000] = {};
      double pointArrayY[1000] = {};
 
@@ -141,6 +142,7 @@ private:
      double rotationspeed;//omega/s
 
      Mapka *m;
+     const int FINAL_POS = 4;
 public slots:
      void setUiValues(double robotX,double robotY,double robotFi);
 signals:

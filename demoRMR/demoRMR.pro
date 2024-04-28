@@ -23,6 +23,7 @@ SOURCES += main.cpp\
         mapka.cpp
 
 HEADERS  += mainwindow.h \
+    globals.h \
     mapka.h
 
 FORMS    += mainwindow.ui \

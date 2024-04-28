@@ -1,8 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "globals.h"
 #include <QPainter>
 #include <math.h>
 #include <mapka.h>
+#include <QPoint>
 
 ///TOTO JE DEMO PROGRAM...AK SI HO NASIEL NA PC V LABAKU NEPREPISUJ NIC,ALE SKOPIRUJ SI MA NIEKAM DO INEHO FOLDERA
 /// AK HO MAS Z GITU A ROBIS NA LABAKOVOM PC, TAK SI HO VLOZ DO FOLDERA KTORY JE JASNE ODLISITELNY OD TVOJICH KOLEGOV
@@ -44,8 +46,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
-    //ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
-    ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
+    ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
+    //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
   //  cap.open("http://192.168.1.11:8000/stream.mjpg");
     ui->setupUi(this);
     datacounter=0;
@@ -256,6 +258,7 @@ int MainWindow::processThisLidar(LaserMeasurement laserData)
         }
     }
 
+
     // std::cout<<pointArrayX[0]<<std::endl;
     // std::cout<<pointArrayY[0]<<std::endl;
     //tu mozete robit s datami z lidaru.. napriklad najst prekazky, zapisat do mapy. naplanovat ako sa prekazke vyhnut.
@@ -263,7 +266,8 @@ int MainWindow::processThisLidar(LaserMeasurement laserData)
     updateLaserPicture=1;
     update();//tento prikaz prinuti prekreslit obrazovku.. zavola sa paintEvent funkcia
 
-    m->setMapData(mapa);
+    m->setLinePoints(QPoint(  (60 + static_cast<int>(x*10))  , (119 - 60 - static_cast<int>(y*10))  ), QPoint(  (60 + static_cast<int>(FINAL_POS*10))  , (119 - 60 - static_cast<int>(FINAL_POS*10))  ));
+    m->setMapData(mapa, edgeMap);
     for(int i = 0; i < 120; i++) {
         for(int j = 0; j < 120; j++) {
             if(mapa[i][j] == 2) {
@@ -272,7 +276,12 @@ int MainWindow::processThisLidar(LaserMeasurement laserData)
         }
     }
 
+    std::cout<<m->getHasObstacle()<<std::endl;
 
+    if(m->getHasObstacle()) {
+        std::cout<<((m->getIntersectionPoint().x()-60.0) /10.0) + 0.05<<std::endl;
+        std::cout<<((59.0 - m->getIntersectionPoint().y()) /10.0) + 0.05<<std::endl;
+    }
     return 0;
 
 }
