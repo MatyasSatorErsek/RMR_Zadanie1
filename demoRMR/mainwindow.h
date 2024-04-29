@@ -22,11 +22,15 @@
 #include<windows.h>
 #include "robot.h"
 #include <algorithm> // Include this header for std::min and std::max
-#include <mutex>
 
 #define TICK_TO_METER 0.000085292090497737556558
-#define ANGLE_TOLERANCE PI*0.15
+#define ANGLE_TOLERANCE PI*0.1
 #define ENCODER_MAX_VALUE 65535
+
+#define ROBOT_RADIUS 0.23
+#define SAFE_ZONE 0.3
+#define CRITICAL_DISTANCE 0.7
+const double SAFE_ANGLE = asin(SAFE_ZONE/CRITICAL_DISTANCE);
 
 namespace Ui {
 class MainWindow;
@@ -71,9 +75,15 @@ public:
 
     int processThisRobot(TKobukiData robotdata);
 
-    queue<Position> referencePositions;
+    vector<Position> referencePositions;
 
+    bool isPathClear(LaserMeasurement laserData);
 
+    bool findRightEdge(LaserMeasurement laserData,double* rEA,double *rED);
+
+    bool findLeftEdge(LaserMeasurement laserData,double* lEA,double* lED);
+
+    Position calculateShorterPath(Position goal, double rea, double lea, double red, double led);
 
 private slots:
     void on_pushButton_9_clicked();
@@ -93,7 +103,7 @@ private slots:
 
     void on_pushButton_10_clicked();
 
-    void getObstacles();
+    //void getObstacles();
 
 private:
 
@@ -119,6 +129,11 @@ private:
 
      bool posReached;
      bool orientationReached;
+
+     bool pathClear;
+
+     double rightEdgeAngle,leftEdgeAngle;
+     double rightEdgeDis, leftEdgeDis;
 
      void getOdometry(TKobukiData robotdata);
 

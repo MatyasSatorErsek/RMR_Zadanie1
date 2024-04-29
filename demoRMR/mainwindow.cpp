@@ -43,8 +43,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
-    //ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
-    ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
+    ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
+    //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
   //  cap.open("http://192.168.1.11:8000/stream.mjpg");
     ui->setupUi(this);
     datacounter=0;
@@ -62,10 +62,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     posReached = false; orientationReached = false;
 
-    /*referencePositions.push(Position(0.3,0.3,0));
-    referencePositions.push(Position(0.5,0.2,0));
-    referencePositions.push(Position(0.1,-0.15,0));*/
-
+    pathClear = true;
 
 
 }
@@ -139,22 +136,14 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
     else
         robot.setTranslationSpeed(0);*/
 
-
-
-
-
-
-
-
-
     getOdometry(robotdata);
-    /*std::cout << "X:" << x << std::endl;
-    std::cout << "Y:" << y << std::endl;
-    std::cout << "Phi:" << phi * (180 / 3.14159265) << std::endl;*/
 
+    bool newPosCalculated = false;
+    Position* newPosition;
+    Position currRefPos(0,0,0);
     if(!referencePositions.empty())
     {
-        Position currRefPos = referencePositions.front();
+        currRefPos=referencePositions.front();
         if(!orientationReached)
         {
             rotationSpeedCtr(currRefPos);
@@ -162,21 +151,39 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
         }
         else
         {
-
             forwardSpeedCtr(currRefPos);
-            robot.setTranslationSpeed(forwardspeed);
             double alfa = -phi +atan2(currRefPos.y - y, currRefPos.x- x);
+            alfa=alfa>PI ? alfa-(2*PI): alfa< -PI ? alfa+2*PI:alfa;
             if(abs(alfa)>ANGLE_TOLERANCE)
             {
                 orientationReached = false;
             }
+            if(pathClear)
+                robot.setTranslationSpeed(forwardspeed);
+            else{
+                robot.setTranslationSpeed(0);
+            }
+
+
         }
         if(orientationReached && posReached)
         {
-            referencePositions.pop();
+            referencePositions.erase(referencePositions.begin());
             orientationReached = false;
             posReached = false;
         }
+
+        /*if(!pathClear){
+            if(!newPosCalculated){
+                *newPosition =calculateShorterPath(currRefPos,rightEdgeAngle,leftEdgeAngle,rightEdgeDis,leftEdgeDis);
+                newPosCalculated = true;
+                referencePositions.insert(referencePositions.begin(),*newPosition);
+            }
+        }
+        else if(pathClear && newPosCalculated){
+            newPosCalculated = false;
+        }*/
+
     }
 
 
@@ -215,6 +222,16 @@ int MainWindow::processThisLidar(LaserMeasurement laserData)
     // ale nic vypoctovo narocne - to iste vlakno ktore cita data z lidaru
     updateLaserPicture=1;
     update();//tento prikaz prinuti prekreslit obrazovku.. zavola sa paintEvent funkcia
+    pathClear = isPathClear(laserData);
+    if(!pathClear){
+        if(findRightEdge(laserData,&rightEdgeAngle,&rightEdgeDis))
+            std::cout<<"Right edge Angle: "<< rightEdgeAngle*(180.0/PI)<<std::endl;
+        if(findLeftEdge(laserData,&leftEdgeAngle,&leftEdgeDis))
+            std::cout<<"Left edge Angle: "<< leftEdgeAngle*(180.0/PI)<<std::endl;
+    }
+    else
+        std::cout<<"Obstacle not detected"<<std::endl;
+    //std::cout<<laserData.Data[0].scanAngle<<std::endl;
 
 
     return 0;
@@ -333,9 +350,9 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
   void MainWindow::forwardSpeedCtr(Position refPos) {
       double distErr;
-      double Kp = 450.0;
-      double maxForwardSpeed = 650.0; // Set maximum forward speed
-      double rampRate = 15.0; // Set ramp rate
+      double Kp = 200;
+      double maxForwardSpeed = 300; // Set maximum forward speed
+      double rampRate = 8; // Set ramp rate
 
       distErr = sqrt(pow(refPos.x - x, 2) + pow(refPos.y - y, 2));
 
@@ -364,13 +381,14 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
   void MainWindow::rotationSpeedCtr(Position refPos) {
       double rotErr;
-      double Kp = 1.5;
-      double maxRotationSpeed = 2.5; // Set maximum rotation speed
+      double Kp = 1.3;
+      double maxRotationSpeed = 2.2; // Set maximum rotation speed
       double rampRate = 0.2; // Set ramp rate
 
       rotErr = -phi + atan2(refPos.y - y, refPos.x - x);
+      rotErr=rotErr>PI ? rotErr-(2*PI): rotErr< -PI ? rotErr+2*PI:rotErr;
 
-      if ((rotErr) < 3.14159265 / 90) {
+      if (abs(rotErr) < PI / 90) {
           // If the error is small, stop rotation
           rotationspeed = 0;
           orientationReached = true;
@@ -379,7 +397,7 @@ void MainWindow::getOdometry(TKobukiData robotData)
           double desiredRotationSpeed = Kp * rotErr;
 
           // Apply ramping to the desired rotation speed
-          if (abs(desiredRotationSpeed - rotationspeed) > rampRate) {
+          if ((desiredRotationSpeed - rotationspeed) > rampRate) {
               if (desiredRotationSpeed > rotationspeed)
                   rotationspeed += rampRate; // Increase rotation speed gradually
               else
@@ -400,10 +418,126 @@ void MainWindow::on_pushButton_10_clicked()
     double x_ref = ui->lineEdit_5->text().toDouble();
     double y_ref = ui->lineEdit_6->text().toDouble();
 
-    referencePositions.push(Position(x_ref,y_ref,0.0));
+    referencePositions.insert(referencePositions.begin(),Position(x_ref,y_ref,0.0));
 }
 
-void MainWindow::getObstacles()
+bool MainWindow::isPathClear(LaserMeasurement laserData)
 {
+    double b,angle,dis;
+    int i = 0;
+    angle = laserData.Data[i].scanAngle * (PI/180.0);
+    dis = laserData.Data[i].scanDistance/1000;
+    b = dis*cos(angle);
+    while(angle <= SAFE_ANGLE || angle >= (2*PI - SAFE_ANGLE)){
+        if(b < CRITICAL_DISTANCE)
+            return false;
+
+        i++;
+        angle = laserData.Data[i].scanAngle * (PI/180.0);
+        dis = laserData.Data[i].scanDistance/1000;
+        b = dis*cos(angle);
+    }
+
+    return true;
+}
+
+bool MainWindow::findRightEdge(LaserMeasurement laserData,double* re,double* red){
+
+    double angle,dis;
+    int idx = 0;
+    angle = laserData.Data[idx].scanAngle*(PI/180.0);
+    dis = laserData.Data[idx].scanDistance/1000;
+    double rightEdge,rightEdgeDis;
+
+    while(angle < 75.0*(PI/180.0)){
+        if(dis > CRITICAL_DISTANCE+SAFE_ZONE){
+            rightEdge = angle;
+            rightEdgeDis = dis;
+            break;
+        }
+        idx++;
+        angle = laserData.Data[idx].scanAngle*(PI/180.0);
+        dis = laserData.Data[idx].scanDistance/1000;
+    }
+    if(angle >= 75.0*(PI/180.0))
+        return false;
+
+    while(angle-rightEdge < SAFE_ANGLE){
+        if(dis < CRITICAL_DISTANCE+SAFE_ZONE){
+            return false;
+        }
+        idx++;
+        angle = laserData.Data[idx].scanAngle*(PI/180.0);
+        dis = laserData.Data[idx].scanDistance/1000;
+    }
+    *re = 2*PI - rightEdge;
+    *red = rightEdgeDis;
+    return true;
+
+}
+
+bool MainWindow::findLeftEdge(LaserMeasurement laserData,double* le,double *led){
+    double angle,dis;
+    int idx = laserData.numberOfScans;
+    angle = laserData.Data[idx].scanAngle*(PI/180.0);
+    dis = laserData.Data[idx].scanDistance/1000;
+    double leftEdge,leftEdgeDis;
+
+    while(angle > (360.0-75.0)*(PI/180.0)){
+        if(dis > CRITICAL_DISTANCE+SAFE_ZONE){
+            leftEdge = angle;
+            leftEdgeDis = dis;
+            break;
+        }
+        idx--;
+        angle = laserData.Data[idx].scanAngle*(PI/180.0);
+        dis = laserData.Data[idx].scanDistance/1000;
+    }
+    if(angle <= (360.0-75.0)*(PI/180.0))
+        return false;
+
+    while(angle-leftEdge > SAFE_ANGLE){
+        if(dis < CRITICAL_DISTANCE+SAFE_ZONE){
+            return false;
+        }
+        idx--;
+        angle = laserData.Data[idx].scanAngle*(PI/180.0);
+        dis = laserData.Data[idx].scanDistance/1000;
+    }
+    *le = 2*PI - leftEdge;
+    *led = leftEdgeDis;
+    return true;
+}
+
+Position MainWindow::calculateShorterPath(Position goal, double rea, double lea, double red, double led){
+    double leftRelx,leftRely;
+    double rightRelx,rightRely;
+
+    rea += SAFE_ANGLE/2;
+    lea += SAFE_ANGLE/2;
+
+    leftRelx = led * cos(lea);
+    leftRely = led * sin(lea);
+    rightRelx = red * cos(rea);
+    rightRely = red * sin(rea);
+
+    double leftGlobx,leftGloby;
+    double rightGlobx, rightGloby;
+
+    leftGlobx = x + leftRelx*cos(phi) - leftRely*sin(phi);
+    leftGloby = y + leftRelx*sin(phi) + leftRely*cos(phi);
+    rightGlobx = x + rightRelx*cos(phi) - rightRely*sin(phi);
+    rightGloby = y + rightRelx*sin(phi) + rightRely*cos(phi);
+
+    double lr,ll;
+
+    ll = sqrt(pow(x - leftGlobx,2) + pow(y - leftGloby,2))+ sqrt(pow(goal.x - leftGlobx,2) + pow(goal.y - leftGloby,2));
+    lr = sqrt(pow(x - rightGlobx,2) + pow(y - rightGloby,2))+ sqrt(pow(goal.x - rightGlobx,2) + pow(goal.y - rightGloby,2));
+    if(ll > lr){
+        return Position(leftGlobx,leftGloby,0.0);
+    }
+    else{
+        return Position(rightGlobx,rightGloby,0.0);
+    }
 
 }
