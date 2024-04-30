@@ -47,8 +47,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
-    //ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
-    ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
+    ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
+    //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
   //  cap.open("http://192.168.1.11:8000/stream.mjpg");
     ui->setupUi(this);
     datacounter=0;
@@ -67,7 +67,7 @@ MainWindow::MainWindow(QWidget *parent) :
     tp->makeTiles();
     tp->makeWallTiles();
     tp->findObstacles();
-    start = {512,-35},target = {170,-70};
+    start = {50,50},target = {170,-70};
 
     if(!tp->markStart(start.x,start.y))
         std::cout<<"Wrong start pos"<<std::endl;
@@ -350,8 +350,8 @@ void MainWindow::getOdometry(TKobukiData robotData)
   void MainWindow::forwardSpeedCtr(Position refPos) {
       double distErr;
       double Kp = 300.0;
-      double maxForwardSpeed = 300.0; // Set maximum forward speed
-      double rampRate = 10.0; // Set ramp rate
+      double maxForwardSpeed = 330.0; // Set maximum forward speed
+      double rampRate = 11.0; // Set ramp rate
 
       double alfa = -phi +atan2(refPos.y - y, refPos.x- x);
       alfa=alfa>3.14159 ? alfa-(2*3.14159): alfa< -3.14159 ? alfa+2*3.14159:alfa;
@@ -395,7 +395,7 @@ void MainWindow::getOdometry(TKobukiData robotData)
       rotErr = -phi + atan2(refPos.y - y, refPos.x - x);
       rotErr=rotErr>3.14159 ? rotErr-(2*3.14159): rotErr< -3.14159 ? rotErr+2*3.14159:rotErr;
 
-      if (abs(rotErr) < 3.14159265 / 120) {
+      if (abs(rotErr) < 3.14159265 / 90) {
           // If the error is small, stop rotation
           rotationspeed = 0;
           orientationReached = true;
