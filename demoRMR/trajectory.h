@@ -7,10 +7,11 @@
 #include <queue>
 
 
-#define ROOM_SIZE 650.0
+#define ROOM_SIZE 750.0
 #define TILE_DIM 25
 #define START -1
 #define TARGET 2
+#define VERTICAL_SHIFT 100.0
 
 
 using std::vector;

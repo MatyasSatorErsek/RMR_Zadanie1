@@ -65,10 +65,10 @@ void TrajectoryPlan::checkObstacles(TMapObject obstacle)
         auto nextPoint = obstacle.points.at((i+1)%obstacle.numofpoints);
 
         int tileXPosCurr = (int) currPoint.point.x/tileDim;
-        int tileYPosCurr = (int) currPoint.point.y/tileDim;
+        int tileYPosCurr = (int) (currPoint.point.y+VERTICAL_SHIFT)/tileDim;
 
         int tileXPosNext = (int) nextPoint.point.x/tileDim;
-        int tileYPosNext = (int) nextPoint.point.y/tileDim;
+        int tileYPosNext = (int) (nextPoint.point.y+VERTICAL_SHIFT)/tileDim;
 
         int minx = std::min(tileXPosCurr,tileXPosNext);
         int miny = std::min(tileYPosCurr,tileYPosNext);
@@ -98,7 +98,7 @@ void TrajectoryPlan::findObstacles()
 bool TrajectoryPlan::markStart(double x, double y)
 {
     startRow = (int) x/tileDim;
-    startCol = (int) y/tileDim;
+    startCol = (int) (y+VERTICAL_SHIFT)/tileDim;
 
     startx = x;
     starty = y;
@@ -117,7 +117,7 @@ bool TrajectoryPlan::markStart(double x, double y)
 bool TrajectoryPlan::markTarget(double x, double y)
 {
     targetRow = (int) x/tileDim;
-    targetCol = (int) y/tileDim;
+    targetCol = (int) (y+VERTICAL_SHIFT)/tileDim;
 
     targetx = x;
     targety = y;
@@ -165,9 +165,9 @@ void TrajectoryPlan::makeWallTiles(){
         B = mapArea.wall.points[idx].point;
 
         int minx = (int) std::min(A.x,B.x)/tileDim;
-        int miny = (int)std::min(A.y,B.y)/tileDim;
+        int miny = (int)std::min(A.y,B.y+ VERTICAL_SHIFT)/tileDim;
         int maxx = (int)std::max(A.x,B.x)/tileDim;
-        int maxy = (int)std::max(A.y,B.y)/tileDim;
+        int maxy = (int)std::max(A.y,B.y+ VERTICAL_SHIFT)/tileDim;
 
         for(int i = minx; i <= maxx; i++){
             for(int j = miny; j <= maxy; j++){
@@ -214,7 +214,7 @@ void TrajectoryPlan::generateTrajectory(queue<Position>& traj){
                 }
             }
             xp = (currRow*tileDim + tileDim/2)/100;
-            yp = (currCol*tileDim + tileDim/2)/100;
+            yp = (currCol*tileDim + tileDim/2)/100 - VERTICAL_SHIFT/100;
             traj.push(Position(xp,yp,0.0));
 
             std::cout<<"["<<xp<<","<<yp<<"]"<<std::endl;
