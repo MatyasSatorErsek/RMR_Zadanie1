@@ -70,7 +70,7 @@ private slots:
 
     void on_pushButton_10_clicked();
 
-    void getObstacles();
+    //void getObstacles();
 
 private:
 

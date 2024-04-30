@@ -193,8 +193,8 @@ void TrajectoryPlan::generateTrajectory(queue<Position>& traj){
 
     while((currRow != targetRow) || (currCol != targetCol)){
 
-        if((tiles[currRow][currCol] <= tiles[currRow+updateR][currCol+updateC]) && (tiles[currRow+updateR][currCol+updateC] > 1)){
-        //if(tiles[currRow][currCol] -1 != tiles[currRow+updateR][currCol + updateC]){
+        //if((tiles[currRow][currCol] <= tiles[currRow+updateR][currCol+updateC]) && (tiles[currRow+updateR][currCol+updateC] > 1)){
+        if(tiles[currRow][currCol] -1 != tiles[currRow+updateR][currCol + updateC]){
             if(updateR == 0 && updateC != 0){
                 updateC = 0;
                 if((tiles[currRow - 1][currCol] < tiles[currRow + 1][currCol])&& (!visited[currRow - 1][currCol])){
@@ -228,5 +228,6 @@ void TrajectoryPlan::generateTrajectory(queue<Position>& traj){
     xp = targetx/100;
     yp = targety/100;
     traj.push(Position(xp,yp,0.0));
+    std::cout<<"["<<xp<<","<<yp<<"]"<<std::endl;
     //return traj;
 }

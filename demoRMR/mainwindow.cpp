@@ -47,8 +47,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
-    //ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
-    ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
+    ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
+    //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
   //  cap.open("http://192.168.1.11:8000/stream.mjpg");
     ui->setupUi(this);
     datacounter=0;
@@ -67,7 +67,7 @@ MainWindow::MainWindow(QWidget *parent) :
     tp->makeTiles();
     tp->makeWallTiles();
     tp->findObstacles();
-    start = {522,365},target = {502,421};
+    start = {50,50},target = {240,200};
 
     if(!tp->markStart(start.x,start.y))
         std::cout<<"Wrong start pos"<<std::endl;
@@ -317,7 +317,7 @@ void MainWindow::getOdometry(TKobukiData robotData)
     {
         x = start.x/100;
         y = start.y/100;
-        phi =PI;
+        phi =0;//PI;
         distance = 0;
     }
     else
@@ -349,8 +349,8 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
   void MainWindow::forwardSpeedCtr(Position refPos) {
       double distErr;
-      double Kp = 400.0;
-      double maxForwardSpeed = 350.0; // Set maximum forward speed
+      double Kp = 300.0;
+      double maxForwardSpeed = 250.0; // Set maximum forward speed
       double rampRate = 10.0; // Set ramp rate
 
       distErr = sqrt(pow(refPos.x - x, 2) + pow(refPos.y - y, 2));
@@ -421,7 +421,3 @@ void MainWindow::on_pushButton_10_clicked()
 }
 
 
-void MainWindow::getObstacles()
-{
-
-}
