@@ -23,7 +23,10 @@ public:
     bool isPathClear(const QPoint& start, const QPoint& end) const;
     QPoint getIntersectionPoint() const;
     bool isEdge(int mapPointJ, int mapPointI) const;
-    QPoint nearestEdge() const;
+    QPoint nearestEdge();
+    bool getInsideRange() const;
+    bool getHasIntersection() const;
+    bool getAllClear() const;
 protected:
     void paintEvent(QPaintEvent *event) override;
 
@@ -36,7 +39,9 @@ private:
     bool hasObstacle;
     bool dodgeObstacle;
     QPoint intersectionPoint;
-
+    bool insideRange = false;
+    bool hasIntersection = false;
+    bool allClear = false;
 };
 
 #endif // MAPKA_H

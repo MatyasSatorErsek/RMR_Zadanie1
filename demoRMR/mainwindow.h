@@ -114,8 +114,8 @@ private:
      QTimer *timer;
 
      double distance;
-     double x;
-     double y;
+     double x = 0;
+     double y = 0;
      double phi;
 
      bool movingLinear;
@@ -142,7 +142,24 @@ private:
      double rotationspeed;//omega/s
 
      Mapka *m;
-     const int FINAL_POS = 4;
+     const int FINAL_POS_X = -4;
+     const int FINAL_POS_Y = 4;
+     //bolo to 5 predtynm
+
+     bool zacniProgram = false;
+
+     void canMoveThere(int mapObstacleX, int mapObstacleY);
+
+     double adjustX = 0;
+     double adjustY = 0;
+
+     float idemeSemX = 0;
+     float idemeSemY = 0;
+
+     void outOfRangeBehaviour();
+     void inRangeBehaviour();
+
+     QPoint idemeSem;
 public slots:
      void setUiValues(double robotX,double robotY,double robotFi);
 signals:

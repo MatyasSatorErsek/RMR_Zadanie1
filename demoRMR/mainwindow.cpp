@@ -44,7 +44,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     m(new Mapka())
 {
-
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
     ipaddress="127.0.0.1"; //192.168.1.11 127.0.0.1
     //ipaddress="192.168.1.11"; //192.168.1.11 127.0.0.1
@@ -266,7 +265,7 @@ int MainWindow::processThisLidar(LaserMeasurement laserData)
     updateLaserPicture=1;
     update();//tento prikaz prinuti prekreslit obrazovku.. zavola sa paintEvent funkcia
 
-    m->setLinePoints(QPoint(  (60 + static_cast<int>(x*10))  , (119 - 60 - static_cast<int>(y*10))  ), QPoint(  (60 + static_cast<int>(FINAL_POS*10))  , (119 - 60 - static_cast<int>(FINAL_POS*10))  ));
+    m->setLinePoints(QPoint(  (60 + static_cast<int>(x*10))  , (119 - 60 - static_cast<int>(y*10))  ), QPoint(  (60 + static_cast<int>(FINAL_POS_X*10))  , (119 - 60 - static_cast<int>(FINAL_POS_Y*10))  ));
     m->setMapData(mapa, edgeMap);
     for(int i = 0; i < 120; i++) {
         for(int j = 0; j < 120; j++) {
@@ -282,6 +281,79 @@ int MainWindow::processThisLidar(LaserMeasurement laserData)
         std::cout<<((m->getIntersectionPoint().x()-60.0) /10.0) + 0.05<<std::endl;
         std::cout<<((59.0 - m->getIntersectionPoint().y()) /10.0) + 0.05<<std::endl;
     }
+
+
+
+
+    if (zacniProgram) {
+        zacniProgram = false;
+
+        idemeSem = m->nearestEdge();
+
+
+        //canMoveThere(idemeSem.y(), idemeSem.x());
+        // if (mapa[idemeSem.x() +1][idemeSem.y() ] == 1){
+        //     adjustX = 0.0;
+        //     adjustY = +0.2;
+        // } else if (mapa[idemeSem.x() -1][idemeSem.y()] == 1){
+        //     adjustX = 0.0;
+        //     adjustY = -0.2;
+        // } else if (mapa[idemeSem.x()][idemeSem.y() -1] == 1){
+        //     adjustX = 0.2;
+        //     adjustY = 0.0;
+        // } else if (mapa[idemeSem.x()][idemeSem.y() +1] == 1){
+        //     adjustX = -0.2;
+        //     adjustY = 0.0;
+        // }
+
+        // idemeSemX = ((idemeSem.y()-60.0)/10.0) +adjustX;
+        // idemeSemY = ((59.0-idemeSem.x())/10.0) +adjustY;
+        if (m->getHasIntersection()) {
+            if (m->getInsideRange()) {
+
+                //idemeSemX = ((idemeSem.y()-60.0)/10.0) +0.05;
+                //idemeSemY = ((59.0-idemeSem.x())/10.0) +0.45 -0.05;
+
+                idemeSemX = ((idemeSem.y()-60.0)/10.0) +0;
+                idemeSemY = ((59.0-idemeSem.x())/10.0) +0.4 -0.05;
+                referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+                idemeSemX = ((idemeSem.y()-60.0)/10.0) +0.4;
+                idemeSemY = ((59.0-idemeSem.x())/10.0) +0.4 -0.05;
+                referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+
+                //inRangeBehaviour();
+
+
+            } else {
+                // idemeSemX = ((idemeSem.y()-60.0)/10.0) -0.35;
+                // idemeSemY = ((59.0-idemeSem.x())/10.0);
+                outOfRangeBehaviour();
+                idemeSemX = ((idemeSem.y()-60.0)/10.0) + adjustX + 0.05;
+                idemeSemY = ((59.0-idemeSem.x())/10.0) + adjustY -0.05;
+                referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+            }
+        } else if (m->getAllClear()){
+            idemeSemX = FINAL_POS_X;
+            idemeSemY = FINAL_POS_Y;
+            referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+        }
+
+
+
+    }
+
+    std::cout<<idemeSemX<<std::endl;
+    std::cout<<idemeSemY<<std::endl;
+    std::cout<<idemeSem.x()<<std::endl;
+    std::cout<<idemeSem.y()<<std::endl;
+    std::cout<<x<<std::endl;
+    std::cout<<y<<std::endl;
+    std::cout<<adjustX<<std::endl;
+    std::cout<<adjustY<<std::endl;
+    std::cout<<"))))))))))))))))))))))))))))))"<<std::endl;
+    std::cout << "Condition x < idemeSemY: " << (x < (idemeSem.y()-60)/10.0) << std::endl;
+    std::cout << "Condition y < idemeSemX: " << (y < (59.0-idemeSem.x())/10.0) << std::endl;
+    std::cout<<mapa[idemeSem.x() +1][idemeSem.y()]<<std::endl;
     return 0;
 
 }
@@ -462,13 +534,170 @@ void MainWindow::getOdometry(TKobukiData robotData)
 
 void MainWindow::on_pushButton_10_clicked()
 {
-    double x_ref = ui->lineEdit_5->text().toDouble();
-    double y_ref = ui->lineEdit_6->text().toDouble();
+    // double x_ref = ui->lineEdit_5->text().toDouble();
+    // double y_ref = ui->lineEdit_6->text().toDouble();
 
-    referencePositions.push(Position(x_ref,y_ref,0.0));
+    // referencePositions.push(Position(x_ref,y_ref,0.0));
+    zacniProgram = true;
 }
 
 void MainWindow::getObstacles()
 {
 
+}
+
+void MainWindow::canMoveThere(int mapObstacleX, int mapObstacleY) {
+    if (mapa[mapObstacleX][mapObstacleY -1] == 1){
+        adjustX = 0.0;
+        adjustY = -0.2;
+    } else if (mapa[mapObstacleX][mapObstacleY +1] == 1){
+        adjustX = 0.0;
+        adjustY = 0.2;
+    } else if (mapa[mapObstacleX -1][mapObstacleY] == 1){
+        adjustX = 0.2;
+        adjustY = 0.0;
+    } else if (mapa[mapObstacleX +1][mapObstacleY] == 1){
+        adjustX = -0.2;
+        adjustY = 0.0;
+    }
+
+}
+
+void MainWindow::outOfRangeBehaviour() {
+
+    if (x < (idemeSem.y()-60)/10.0 && y < (59.0-idemeSem.x())/10.0) {
+        if (mapa[idemeSem.x()][idemeSem.y() -1] == 1) {
+            adjustX = 0.0;
+            adjustY = -0.4;
+        } else if (mapa[idemeSem.x() +1][idemeSem.y()] == 1){
+            adjustX = -0.4;
+            adjustY = 0.0;
+        } else if (mapa[idemeSem.x() -1][idemeSem.y()] == 1){
+            adjustX = 0.0;
+            adjustY = -0.4;
+        } else if (mapa[idemeSem.x()][idemeSem.y() +1] == 1){
+            adjustX = -0.4;
+            adjustY = 0.0;
+        }
+    } else if (x < (idemeSem.y()-60)/10.0 && y > (59.0-idemeSem.x())/10.0) {
+        if (mapa[idemeSem.x()][idemeSem.y() -1] == 1) {
+            adjustX = 0.0;
+            adjustY = 0.4;
+        } else if (mapa[idemeSem.x() +1][idemeSem.y()] == 1){
+            adjustX = 0.0;
+            adjustY = 0.4;
+        } else if (mapa[idemeSem.x() -1][idemeSem.y()] == 1){
+            adjustX = -0.4;
+            adjustY = 0.0;
+        } else if (mapa[idemeSem.x()][idemeSem.y() +1] == 1){
+            adjustX = -0.4;
+            adjustY = 0.0;
+        }
+    } else if (x > (idemeSem.y()-60)/10.0 && y > (59.0-idemeSem.x())/10.0) {
+        if (mapa[idemeSem.x()][idemeSem.y() -1] == 1) {
+            adjustX = 0.4;
+            adjustY = 0.0;
+        } else if (mapa[idemeSem.x() +1][idemeSem.y()] == 1){
+            adjustX = 0.0;
+            adjustY = 0.4;
+        } else if (mapa[idemeSem.x() -1][idemeSem.y()] == 1){
+            adjustX = 0.4;
+            adjustY = 0.0;
+        } else if (mapa[idemeSem.x()][idemeSem.y() +1] == 1){
+            adjustX = 0.0;
+            adjustY = 0.4;
+        }
+    } else if (x > (idemeSem.y()-60)/10.0 && y < (59.0-idemeSem.x())/10.0) {
+        if (mapa[idemeSem.x()][idemeSem.y() -1] == 1) {
+            adjustX = 0.4;
+            adjustY = 0.0;
+        } else if (mapa[idemeSem.x() +1][idemeSem.y()] == 1){
+            adjustX = 0.4;
+            adjustY = 0.0;
+        } else if (mapa[idemeSem.x() -1][idemeSem.y()] == 1){
+            adjustX = 0.0;
+            adjustY = -0.4;
+        } else if (mapa[idemeSem.x()][idemeSem.y() +1] == 1){
+            adjustX = 0.0;
+            adjustY = -0.4;
+        }
+    }
+}
+
+
+void MainWindow::inRangeBehaviour() {
+
+    if (x < (idemeSem.y()-60)/10.0 && y < (59.0-idemeSem.x())/10.0) {
+        if (mapa[idemeSem.x()][idemeSem.y() -1] == 1) {
+            adjustX = 0.4;
+            adjustY = -0.4;
+        } else if (mapa[idemeSem.x() +1][idemeSem.y()] == 1){
+            idemeSemX = ((idemeSem.y()-60.0)/10.0) +0;
+            idemeSemY = ((59.0-idemeSem.x())/10.0) +0.4 -0.05;
+            referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+            idemeSemX = ((idemeSem.y()-60.0)/10.0) +0.4;
+            idemeSemY = ((59.0-idemeSem.x())/10.0) +0.4 -0.05;
+            referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+        } else if (mapa[idemeSem.x() -1][idemeSem.y()] == 1){
+            idemeSemX = ((idemeSem.y()-60.0)/10.0) +0.4;
+            idemeSemY = ((59.0-idemeSem.x())/10.0);
+            referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+            idemeSemX = ((idemeSem.y()-60.0)/10.0) +0.4;
+            idemeSemY = ((59.0-idemeSem.x())/10.0) +0.4 -0.05;
+            referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+        } else if (mapa[idemeSem.x()][idemeSem.y() +1] == 1){
+            adjustX = -0.4;
+            adjustY = 0.4;
+        }
+    } else if (x < (idemeSem.y()-60)/10.0 && y > (59.0-idemeSem.x())/10.0) {
+        if (mapa[idemeSem.x()][idemeSem.y() -1] == 1) {
+            idemeSemX = ((idemeSem.y()-60.0)/10.0) + 0.4;
+            idemeSemY = ((59.0-idemeSem.x())/10.0);
+            referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+            idemeSemX = ((idemeSem.y()-60.0)/10.0) +0.4;
+            idemeSemY = ((59.0-idemeSem.x())/10.0) +0.4 -0.05;
+            referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+        } else if (mapa[idemeSem.x() +1][idemeSem.y()] == 1){
+            adjustX = 0.4;
+            adjustY = 0.4;
+        } else if (mapa[idemeSem.x() -1][idemeSem.y()] == 1){
+            idemeSemX = ((idemeSem.y()-60.0)/10.0) +0.4;
+            idemeSemY = ((59.0-idemeSem.x())/10.0);
+            referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+            idemeSemX = ((idemeSem.y()-60.0)/10.0) +0.4;
+            idemeSemY = ((59.0-idemeSem.x())/10.0) -0.05;
+            referencePositions.push(Position(idemeSemX,idemeSemY,0.0));
+        } else if (mapa[idemeSem.x()][idemeSem.y() +1] == 1){
+            adjustX = -0.4;
+            adjustY = 0.0;
+        }
+    } else if (x > (idemeSem.y()-60)/10.0 && y > (59.0-idemeSem.x())/10.0) {
+        if (mapa[idemeSem.x()][idemeSem.y() -1] == 1) {
+            adjustX = 0.4;
+            adjustY = 0.0;
+        } else if (mapa[idemeSem.x() +1][idemeSem.y()] == 1){
+            adjustX = 0.0;
+            adjustY = 0.4;
+        } else if (mapa[idemeSem.x() -1][idemeSem.y()] == 1){
+            adjustX = 0.4;
+            adjustY = 0.0;
+        } else if (mapa[idemeSem.x()][idemeSem.y() +1] == 1){
+            adjustX = 0.0;
+            adjustY = 0.4;
+        }
+    } else if (x > (idemeSem.y()-60)/10.0 && y < (59.0-idemeSem.x())/10.0) {
+        if (mapa[idemeSem.x()][idemeSem.y() -1] == 1) {
+            adjustX = 0.4;
+            adjustY = 0.0;
+        } else if (mapa[idemeSem.x() +1][idemeSem.y()] == 1){
+            adjustX = 0.4;
+            adjustY = 0.0;
+        } else if (mapa[idemeSem.x() -1][idemeSem.y()] == 1){
+            adjustX = 0.0;
+            adjustY = -0.4;
+        } else if (mapa[idemeSem.x()][idemeSem.y() +1] == 1){
+            adjustX = 0.0;
+            adjustY = -0.4;
+        }
+    }
 }
