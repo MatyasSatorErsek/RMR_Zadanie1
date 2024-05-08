@@ -12,6 +12,85 @@
 /// AZ POTOM ZACNI ROBIT... AK TO NESPRAVIS, POJDU BODY DOLE... A NIE JEDEN,ALEBO DVA ALE BUDES RAD
 /// AK SA DOSTANES NA SKUSKU
 
+double forwardSpeedCtr2(double distErr) {
+    double Kp = 200;
+    double maxForwardSpeed = 400; // Set maximum forward speed
+    double rampRate = 12; // Set ramp rat
+    double forwardspeed = 0;
+    cout<<"Forw Error: "<< distErr<<std::endl;
+
+    if (distErr < 0.05) {
+        // If the error is small, stop forward motion
+        forwardspeed = 0;
+    } else {
+        // Calculate the desired forward speed with proportional control
+        double desiredForwardSpeed = Kp * distErr;
+
+        // Apply ramping to the desired forward speed
+        if ((desiredForwardSpeed - forwardspeed) > rampRate) {
+            if (desiredForwardSpeed > forwardspeed)
+                forwardspeed += rampRate; // Increase forward speed gradually
+            else
+                forwardspeed -= rampRate; // Decrease forward speed gradually
+        } else {
+            forwardspeed = desiredForwardSpeed; // Apply the desired forward speed
+        }
+
+        // Limit the forward speed to the maximum value
+        forwardspeed = min(forwardspeed, maxForwardSpeed);
+    }
+    return forwardspeed;
+}
+
+
+double rotationSpeedCtr2(double refAngle, double currAngle){
+    //refAngle = refAngle * (PI/180);
+    double rotErr = -currAngle + refAngle;
+    //refAngle = refAngle
+    //rotErr=rotErr>PI ? rotErr-(2*PI): rotErr< -PI ? rotErr+2*PI:rotErr;
+    double rotationspeed = 0;
+    double Kp = 1.3;
+    double maxRotationSpeed = 2.2; // Set maximum rotation speed
+    double rampRate = 0.2; // Set ramp rate
+
+    cout<<"Rot Error: "<< rotErr<<std::endl;
+    if (abs(rotErr) < PI / 90) {
+        // If the error is small, stop rotation
+        rotationspeed = 0;
+    } else {
+        // Calculate the desired rotation speed with proportional control
+        double desiredRotationSpeed = Kp * rotErr;
+
+        // Apply ramping to the desired rotation speed
+        if ((desiredRotationSpeed - rotationspeed) > rampRate) {
+            if (desiredRotationSpeed > rotationspeed)
+                rotationspeed += rampRate; // Increase rotation speed gradually
+            else
+                rotationspeed -= rampRate; // Decrease rotation speed gradually
+        } else {
+            rotationspeed = desiredRotationSpeed; // Apply the desired rotation speed
+        }
+
+        // Limit the rotation speed to the maximum value
+        rotationspeed = min(rotationspeed, maxRotationSpeed);
+        rotationspeed = max(rotationspeed, -maxRotationSpeed);
+    }
+    return rotationspeed;
+}
+
+
+Position MainWindow::calculateCoordinates(double distance,double angle){
+    angle += SAFE_ANGLE;
+
+    double relx = distance * cos(angle);
+    double rely = distance * sin(angle);
+
+    double globx = x + relx*cos(phi) - rely*sin(phi);
+    double globy = y + relx*sin(phi) + rely*cos(phi);
+
+    return Position(globx,globy,0.0);
+}
+
 int evalEnc(int oldDiff)
 {
     int newDiff= oldDiff;
@@ -39,7 +118,8 @@ double tickToMeter(int encValPrev, int encValCur)
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    newGoal(0,0,0.0)
 {
 
     //tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
@@ -63,7 +143,13 @@ MainWindow::MainWindow(QWidget *parent) :
     posReached = false; orientationReached = false;
 
     pathClear = true;
-
+    orginalGoal = true;
+    newPosCalculated = false;
+    avoidObstacles = false;
+    obstacleAngle = 0.0;
+    obstacleDis = 0.0;
+    first = true;
+    first_phi = 0;
 
 }
 
@@ -138,12 +224,13 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
 
     getOdometry(robotdata);
 
-    bool newPosCalculated = false;
-    Position* newPosition;
+
     Position currRefPos(0,0,0);
     if(!referencePositions.empty())
     {
+
         currRefPos=referencePositions.front();
+
         if(!orientationReached)
         {
             rotationSpeedCtr(currRefPos);
@@ -154,35 +241,42 @@ int MainWindow::processThisRobot(TKobukiData robotdata)
             forwardSpeedCtr(currRefPos);
             double alfa = -phi +atan2(currRefPos.y - y, currRefPos.x- x);
             alfa=alfa>PI ? alfa-(2*PI): alfa< -PI ? alfa+2*PI:alfa;
-            if(abs(alfa)>ANGLE_TOLERANCE)
-            {
-                orientationReached = false;
-            }
-            if(pathClear)
+
+
+            if(!avoidObstacles){
                 robot.setTranslationSpeed(forwardspeed);
-            else{
-                robot.setTranslationSpeed(0);
+                //std::cout<<"Clear"<<std::endl;
+                if(abs(alfa)>ANGLE_TOLERANCE)
+                {
+                    orientationReached = false;
+                }
             }
-
-
+            else{
+                if(first){
+                    first_phi = phi;
+                    first = false;
+                }
+                double rs = rotationSpeedCtr2(first_phi + obstacleAngle,phi);
+                if(rs == 0.0){
+                    //std::cout<<"forward"<<std::endl;
+                    double fs = forwardSpeedCtr2(obstacleDis);
+                    if(fs == 0.0)
+                        avoidObstacles = false;
+                    robot.setTranslationSpeed(fs);
+                }
+                else{
+                    robot.setRotationSpeed(rs);
+                    //std::cout<<"rotate"<<std::endl;
+                }
+            }
         }
         if(orientationReached && posReached)
         {
             referencePositions.erase(referencePositions.begin());
+            newPosCalculated = false;
             orientationReached = false;
             posReached = false;
         }
-
-        /*if(!pathClear){
-            if(!newPosCalculated){
-                *newPosition =calculateShorterPath(currRefPos,rightEdgeAngle,leftEdgeAngle,rightEdgeDis,leftEdgeDis);
-                newPosCalculated = true;
-                referencePositions.insert(referencePositions.begin(),*newPosition);
-            }
-        }
-        else if(pathClear && newPosCalculated){
-            newPosCalculated = false;
-        }*/
 
     }
 
@@ -223,16 +317,47 @@ int MainWindow::processThisLidar(LaserMeasurement laserData)
     updateLaserPicture=1;
     update();//tento prikaz prinuti prekreslit obrazovku.. zavola sa paintEvent funkcia
     pathClear = isPathClear(laserData);
-    if(!pathClear){
-        if(findRightEdge(laserData,&rightEdgeAngle,&rightEdgeDis))
-            std::cout<<"Right edge Angle: "<< rightEdgeAngle*(180.0/PI)<<std::endl;
-        if(findLeftEdge(laserData,&leftEdgeAngle,&leftEdgeDis))
-            std::cout<<"Left edge Angle: "<< leftEdgeAngle*(180.0/PI)<<std::endl;
-    }
-    else
-        std::cout<<"Obstacle not detected"<<std::endl;
-    //std::cout<<laserData.Data[0].scanAngle<<std::endl;
+    if(!pathClear && !avoidObstacles){
 
+
+        bool a,b;
+
+        a = findRightEdge(laserData,&rightEdgeAngle,&rightEdgeDis);
+        b = findLeftEdge(laserData,&leftEdgeAngle,&leftEdgeDis);
+        if(!a && !b){
+            robot.setRotationSpeed(0);
+            robot.setTranslationSpeed(0);
+            return 0;
+        }
+
+        else if(a && b){
+            std::pair<double,double> newGoal = calculateShorterPath2(referencePositions.front(),rightEdgeAngle,leftEdgeAngle,rightEdgeDis,leftEdgeDis);
+            obstacleAngle = newGoal.first;
+            obstacleDis = newGoal.second;
+        }
+        else if(a && !b){
+            newGoal = calculateCoordinates(rightEdgeDis,rightEdgeAngle);
+            obstacleAngle = rightEdgeAngle-SAFE_ANGLE/2;
+            obstacleDis = rightEdgeDis + SAFE_ZONE;
+            std::cout<<"Right"<<std::endl;
+        }
+        else if(!a && b){
+            newGoal = calculateCoordinates(leftEdgeDis,leftEdgeAngle);
+            obstacleAngle = leftEdgeAngle+SAFE_ANGLE/2;
+            obstacleDis = leftEdgeDis + SAFE_ZONE;
+            std::cout<<"Left"<<std::endl;
+        }
+        obstacleAngle =
+        //std::cout<<"An : "<<obstacleAngle<<" D : "<<obstacleDis<<std::endl;
+        //referencePositions.insert(referencePositions.begin(),newGoal);
+        newPosCalculated = true;
+
+        /*if(findRightEdge(laserData,&rightEdgeAngle,&rightEdgeDis))
+            std::cout<<"Right edge Dis: "<< rightEdgeDis<<std::endl;
+        if(findLeftEdge(laserData,&leftEdgeAngle,&leftEdgeDis))
+            std::cout<<"Left edge Dis: "<< leftEdgeDis<<std::endl;*/
+        avoidObstacles = true;
+    }
 
     return 0;
 
@@ -449,27 +574,27 @@ bool MainWindow::findRightEdge(LaserMeasurement laserData,double* re,double* red
     dis = laserData.Data[idx].scanDistance/1000;
     double rightEdge,rightEdgeDis;
 
-    while(angle < 75.0*(PI/180.0)){
+    while(angle < 45.0*(PI/180.0)){
         if(dis > CRITICAL_DISTANCE+SAFE_ZONE){
             rightEdge = angle;
-            rightEdgeDis = dis;
+            rightEdgeDis = laserData.Data[idx-1].scanDistance/1000 + SAFE_ZONE/2;
             break;
         }
         idx++;
         angle = laserData.Data[idx].scanAngle*(PI/180.0);
         dis = laserData.Data[idx].scanDistance/1000;
     }
-    if(angle >= 75.0*(PI/180.0))
+    if(angle >= 45.0*(PI/180.0))
         return false;
 
-    while(angle-rightEdge < SAFE_ANGLE){
+    /*while(angle-rightEdge < SAFE_ANGLE){
         if(dis < CRITICAL_DISTANCE+SAFE_ZONE){
             return false;
         }
         idx++;
         angle = laserData.Data[idx].scanAngle*(PI/180.0);
         dis = laserData.Data[idx].scanDistance/1000;
-    }
+    }*/
     *re = 2*PI - rightEdge;
     *red = rightEdgeDis;
     return true;
@@ -483,27 +608,27 @@ bool MainWindow::findLeftEdge(LaserMeasurement laserData,double* le,double *led)
     dis = laserData.Data[idx].scanDistance/1000;
     double leftEdge,leftEdgeDis;
 
-    while(angle > (360.0-75.0)*(PI/180.0)){
+    while(angle > (360.0-45.0)*(PI/180.0)){
         if(dis > CRITICAL_DISTANCE+SAFE_ZONE){
             leftEdge = angle;
-            leftEdgeDis = dis;
+            leftEdgeDis = CRITICAL_DISTANCE + SAFE_ZONE/2;//laserData.Data[idx-1].scanDistance/1000 + SAFE_ZONE/2;
             break;
         }
         idx--;
         angle = laserData.Data[idx].scanAngle*(PI/180.0);
         dis = laserData.Data[idx].scanDistance/1000;
     }
-    if(angle <= (360.0-75.0)*(PI/180.0))
+    if(angle <= (360.0-45.0)*(PI/180.0))
         return false;
 
-    while(angle-leftEdge > SAFE_ANGLE){
+    /*while(angle-leftEdge > SAFE_ANGLE){
         if(dis < CRITICAL_DISTANCE+SAFE_ZONE){
             return false;
         }
         idx--;
         angle = laserData.Data[idx].scanAngle*(PI/180.0);
         dis = laserData.Data[idx].scanDistance/1000;
-    }
+    }*/
     *le = 2*PI - leftEdge;
     *led = leftEdgeDis;
     return true;
@@ -513,8 +638,8 @@ Position MainWindow::calculateShorterPath(Position goal, double rea, double lea,
     double leftRelx,leftRely;
     double rightRelx,rightRely;
 
-    rea += SAFE_ANGLE/2;
-    lea += SAFE_ANGLE/2;
+    rea += SAFE_ANGLE;
+    lea += SAFE_ANGLE;
 
     leftRelx = led * cos(lea);
     leftRely = led * sin(lea);
@@ -541,3 +666,37 @@ Position MainWindow::calculateShorterPath(Position goal, double rea, double lea,
     }
 
 }
+
+std::pair<double,double> MainWindow::calculateShorterPath2(Position goal, double rea, double lea, double red, double led){
+    double leftRelx,leftRely;
+    double rightRelx,rightRely;
+
+    rea += SAFE_ANGLE/2;
+    lea += SAFE_ANGLE/2;
+
+    leftRelx = led * cos(lea);
+    leftRely = led * sin(lea);
+    rightRelx = red * cos(rea);
+    rightRely = red * sin(rea);
+
+    double leftGlobx,leftGloby;
+    double rightGlobx, rightGloby;
+
+    leftGlobx = x + leftRelx*cos(phi) - leftRely*sin(phi);
+    leftGloby = y + leftRelx*sin(phi) + leftRely*cos(phi);
+    rightGlobx = x + rightRelx*cos(phi) - rightRely*sin(phi);
+    rightGloby = y + rightRelx*sin(phi) + rightRely*cos(phi);
+
+    double lr,ll;
+
+    ll = sqrt(pow(x - leftGlobx,2) + pow(y - leftGloby,2))+ sqrt(pow(goal.x - leftGlobx,2) + pow(goal.y - leftGloby,2));
+    lr = sqrt(pow(x - rightGlobx,2) + pow(y - rightGloby,2))+ sqrt(pow(goal.x - rightGlobx,2) + pow(goal.y - rightGloby,2));
+    if(ll > lr){
+        return make_pair(lea,led);
+    }
+    else{
+        return make_pair(rea,red);
+    }
+
+}
+
